@@ -706,3 +706,102 @@ button {
   .us-tabla tr { padding: 10px 0; border-bottom: 1px solid var(--border); }
   .us-tabla td { border: 0; padding: 4px 0; }
 }
+
+/* ---- Gestor de ventas ---- */
+#manager-area { display: grid; gap: 16px; }
+.mg-pestanas { display: flex; flex-wrap: wrap; gap: 8px; }
+.mg-pestana {
+  min-height: 44px; padding: 0 18px; border: 1px solid var(--border); border-radius: 999px;
+  background: var(--white); color: var(--ink); font-weight: 600; cursor: pointer;
+}
+.mg-pestana.activa { border-color: var(--wine); background: var(--pink); color: var(--wine-dark); }
+.mg-modo { padding: 10px 13px; border-radius: 10px; border: 1px solid #ead9b9; background: #fffaf0; color: #745526; font-size: 13px; line-height: 1.55; }
+.mg-mensaje { padding: 10px 13px; border-radius: 10px; font-size: 13px; line-height: 1.55; border: 1px solid var(--border); background: var(--pink); }
+.mg-mensaje.ok { border-color: #bcd9ca; color: #245c46; background: #f1faf5; }
+.mg-mensaje.error { border-color: #f0c9c2; color: #8a2f20; background: #fff3f1; }
+
+.mg-kpis { display: grid; gap: 10px; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); }
+.mg-kpi {
+  display: grid; gap: 4px; padding: 12px 14px; text-align: left; font: inherit; color: var(--ink);
+  border: 1px solid var(--border); border-radius: 12px; background: var(--white);
+}
+button.mg-kpi { cursor: pointer; }
+button.mg-kpi:hover { border-color: var(--gold); }
+.mg-kpi-valor { font-size: 24px; font-weight: 700; line-height: 1.1; }
+.mg-kpi-titulo { font-size: 12px; color: var(--muted); }
+.mg-kpi.alerta { border-color: #e0b4aa; background: #fff3f1; }
+.mg-kpi.alerta .mg-kpi-valor { color: #8a2f20; }
+.mg-kpi.aviso { border-color: #ead9b9; background: #fffaf0; }
+
+#mg-contenido { display: grid; gap: 14px; padding: 18px; border: 1px solid var(--border); border-radius: 14px; background: var(--white); box-shadow: var(--shadow); }
+.mg-titulo { margin: 0; font-size: 18px; }
+.mg-titulo:focus { outline: none; }
+#mg-contenido h4 { margin: 0 0 8px; font-size: 14px; }
+.mg-vacio { margin: 0; color: var(--muted); font-size: 13px; }
+
+.mg-barra { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+.mg-barra input, .mg-barra select, .mg-rec-form input, .mg-campo input, .mg-campo select, .mg-campo textarea {
+  min-height: 44px; padding: 0 13px; border: 1px solid #e5d9e1; border-radius: 10px; outline: none;
+  background: white; font-size: 14px; color: var(--ink); font-family: inherit;
+}
+.mg-campo textarea { padding: 10px 13px; min-height: 110px; resize: vertical; line-height: 1.5; }
+.mg-barra input[type="search"] { flex: 1 1 200px; }
+.mg-barra input:focus, .mg-barra select:focus, .mg-rec-form input:focus, .mg-campo input:focus, .mg-campo select:focus, .mg-campo textarea:focus {
+  border-color: var(--wine); box-shadow: 0 0 0 3px rgba(244, 119, 33, .12);
+}
+
+.mg-lista { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+.mg-fila {
+  width: 100%; min-height: 48px; display: grid; gap: 4px 12px; align-items: center; padding: 10px 14px; text-align: left;
+  grid-template-columns: minmax(0, 1fr) auto auto auto; border: 1px solid var(--border); border-radius: 12px;
+  background: var(--white); color: var(--ink); font: inherit; cursor: pointer;
+}
+.mg-fila:hover, .mg-fila:focus-visible { border-color: var(--wine); }
+.mg-fila-nombre { font-weight: 600; overflow-wrap: anywhere; }
+.mg-fila-tel, .mg-fila-fecha { font-size: 12px; color: var(--muted); }
+.mg-etapa { display: inline-block; padding: 3px 10px; border-radius: 999px; font-size: 11px; font-weight: 600; background: var(--pink); color: var(--wine-dark); white-space: nowrap; }
+.mg-etapa-pedido_en_curso { background: #fff3d6; color: #745526; }
+.mg-etapa-cliente, .mg-etapa-recompra { background: #e5f4ec; color: #245c46; }
+.mg-etapa-inactiva { background: #eee9e4; color: var(--muted); }
+
+.mg-ficha-cabecera { display: flex; flex-wrap: wrap; gap: 10px 14px; align-items: center; }
+.mg-form { display: grid; gap: 14px; }
+.mg-rejilla { display: grid; gap: 14px; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); }
+.mg-campo { display: grid; gap: 6px; font-size: 12px; color: var(--muted); }
+.mg-campo small, .mg-contador { font-size: 11px; line-height: 1.5; color: var(--muted); }
+.mg-consentimiento { display: flex; gap: 10px; align-items: flex-start; padding: 12px 14px; border: 1px solid #ead9b9; border-radius: 10px; background: #fffaf0; font-size: 13px; line-height: 1.55; color: #745526; cursor: pointer; }
+.mg-consentimiento input { width: 20px; height: 20px; margin-top: 2px; flex: none; accent-color: var(--wine); }
+.mg-acciones { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+
+.mg-columnas { display: grid; gap: 22px; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); }
+.mg-recs { list-style: none; margin: 0 0 10px; padding: 0; display: grid; gap: 6px; }
+.mg-recs li { display: flex; flex-wrap: wrap; gap: 4px 10px; align-items: center; font-size: 13px; }
+.mg-recs li.hecho { color: var(--muted); text-decoration: line-through; }
+.mg-recs li.vencido .mg-rec-fecha { color: #8a2f20; font-weight: 700; }
+.mg-recs input[type="checkbox"] { width: 20px; height: 20px; accent-color: var(--wine); }
+.mg-rec-fecha { font-size: 12px; color: var(--muted); white-space: nowrap; }
+.mg-rec-form { display: flex; flex-wrap: wrap; gap: 8px; }
+.mg-rec-form input[type="text"] { flex: 1 1 180px; }
+.mg-historial { margin: 0; padding-left: 18px; display: grid; gap: 4px; font-size: 13px; }
+.mg-consent-info { margin: 10px 0 0; font-size: 12px; color: var(--muted); line-height: 1.5; }
+.mg-enlace { padding: 0; border: 0; background: none; color: var(--wine-dark); font: inherit; font-weight: 600; text-decoration: underline; cursor: pointer; }
+.mg-grupo { display: grid; gap: 6px; }
+
+.mg-peligro { display: grid; gap: 10px; }
+.mg-borrar { padding: 8px 14px; border: 1px solid #e0b4aa; border-radius: 10px; color: #8a2f20; background: white; font-weight: 600; cursor: pointer; }
+.mg-borrar:hover { background: #fff3f1; }
+.mg-confirmar { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; padding: 12px 14px; border: 1px solid #f0c9c2; border-radius: 10px; background: #fff3f1; }
+.mg-confirmar p { margin: 0 0 4px; flex: 1 1 100%; font-size: 13px; color: #8a2f20; }
+
+.mg-tabla { width: 100%; border-collapse: collapse; font-size: 13px; }
+.mg-tabla th { text-align: left; padding: 8px 10px; color: var(--muted); font-size: 11px; font-weight: 600; border-bottom: 1px solid var(--border); }
+.mg-tabla td { padding: 10px; border-bottom: 1px solid var(--border); vertical-align: top; }
+
+@media (max-width: 760px) {
+  .mg-fila { grid-template-columns: minmax(0, 1fr) auto; }
+  .mg-fila-tel, .mg-fila-fecha { grid-column: 1 / -1; }
+  .mg-tabla thead { display: none; }
+  .mg-tabla, .mg-tabla tbody, .mg-tabla tr, .mg-tabla td { display: block; width: 100%; }
+  .mg-tabla tr { padding: 8px 0; border-bottom: 1px solid var(--border); }
+  .mg-tabla td { border: 0; padding: 3px 0; }
+}

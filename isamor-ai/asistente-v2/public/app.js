@@ -47,12 +47,10 @@ const modules = {
   },
   manager: {
     title: 'Gestor de ventas',
-    description: 'Estructura tus actividades y organiza el seguimiento comercial.',
-    prompts: [
-      'Quiero crear una lista de tareas comerciales.',
-      'Ayúdame a estructurar un plan semanal de ventas.',
-      'Necesito organizar el seguimiento de pedidos.'
-    ]
+    description: 'Tus clientas, su etapa de seguimiento y tus recordatorios. Los datos personales se guardan cifrados.',
+    live: true,
+    gestor: true,
+    prompts: []
   }
 };
 
@@ -186,8 +184,10 @@ function mostrarLogin(mensaje = '') {
   cambiarClaveActual = false;
   mostrar($('nav-users'), false);
   mostrar($('users-area'), false);
+  mostrar($('manager-area'), false);
   mostrar($('cuenta-area'), false);
   if (window.Usuarios) window.Usuarios.cerrar();
+  if (window.Gestor) window.Gestor.cerrar();
   mostrar($('session-bar'), false);
   mostrar($('sin-permiso'), false);
   mostrar($('login-form'), true);
@@ -198,15 +198,18 @@ function mostrarLogin(mensaje = '') {
 
 function mostrarChat() {
   const esUsuarios = moduloActual === 'users';
+  const esGestor = moduloActual === 'manager';
   mostrar($('login-form'), false);
   mostrar($('sin-permiso'), false);
   mostrar($('cuenta-area'), false);
-  mostrar($('chat-area'), !esUsuarios);
+  mostrar($('chat-area'), !esUsuarios && !esGestor);
   mostrar($('users-area'), esUsuarios);
+  mostrar($('manager-area'), esGestor);
   mostrar($('session-bar'), true);
   mostrar($('change-pass'), true);
   $('session-user').textContent = `Sesión de ${usuarioActual}`;
   if (esUsuarios) { window.Usuarios.abrir({ usuario: usuarioActual, alSesionVencida }); return; }
+  if (esGestor) { window.Gestor.abrir({ usuario: usuarioActual, admin: adminActual, alSesionVencida }); return; }
   const bienvenida = modules[moduloActual] && modules[moduloActual].bienvenida;
   if (!chatLog.children.length && bienvenida) agregarMensaje(bienvenida, 'assistant');
 }
@@ -218,6 +221,7 @@ function mostrarSegunPermiso() {
   mostrar($('login-form'), false);
   mostrar($('chat-area'), false);
   mostrar($('users-area'), false);
+  mostrar($('manager-area'), false);
   mostrar($('cuenta-area'), false);
   mostrar($('session-bar'), true);
   mostrar($('sin-permiso'), true);
@@ -230,6 +234,7 @@ function mostrarCuenta(obligatorio) {
   mostrar($('sin-permiso'), false);
   mostrar($('chat-area'), false);
   mostrar($('users-area'), false);
+  mostrar($('manager-area'), false);
   mostrar($('cuenta-area'), true);
   mostrar($('session-bar'), true);
   mostrar($('change-pass'), !obligatorio);   // con clave temporal no hay otra opción que cambiarla
@@ -271,7 +276,7 @@ $('login-form').addEventListener('submit', async evento => {
       const s = await api('/api/sesion').catch(() => null);
       aplicarSesion(s && s.estado === 200 ? s.datos : { usuario: usuarioActual });
       mostrarSegunPermiso();
-      if (!cambiarClaveActual && moduloPermitido(moduloActual) && moduloActual !== 'users') input.focus();
+      if (!cambiarClaveActual && moduloPermitido(moduloActual) && moduloActual !== 'users' && moduloActual !== 'manager') input.focus();
     } else if (r.estado === 429) {
       const minutos = Math.max(1, Math.ceil(r.reintento / 60));
       $('login-error').textContent = `Demasiados intentos. Espera ${minutos} minuto(s) e inténtalo de nuevo.`;
@@ -357,6 +362,7 @@ input.addEventListener('keydown', evento => {
 
 // ---- Navegación ----
 function openModule(key) {
+  if (window.Gestor) window.Gestor.cerrar();   // al salir del Gestor no quedan datos personales en la pantalla
   moduloActual = key;
   document.querySelectorAll('[data-module]').forEach(boton => {
     boton.classList.toggle('active', boton.dataset.module === key);
@@ -389,12 +395,13 @@ function openModule(key) {
   }
 
   mostrar($('demo-notice'), !seleccionado.live);
-  mostrar($('sales-extras'), !!seleccionado.live && !seleccionado.usuarios);
+  mostrar($('sales-extras'), !!seleccionado.live && !seleccionado.usuarios && !seleccionado.gestor);
   mostrar($('login-form'), false);
   mostrar($('session-bar'), false);
   mostrar($('users-area'), false);
+  mostrar($('manager-area'), false);
   mostrar($('cuenta-area'), false);
-  mostrar($('chat-area'), !seleccionado.usuarios);
+  mostrar($('chat-area'), !seleccionado.usuarios && !seleccionado.gestor);
 
   if (seleccionado.live) {
     prepararModuloVivo();

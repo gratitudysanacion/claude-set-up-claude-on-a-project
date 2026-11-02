@@ -547,3 +547,14 @@ El panel, Gratitud, Nginx, UFW y el cron de respaldo **no se tocaron** en esta e
 | Gestor de ventas: pantallas (Entregas 15 y 15b) | Implementadas e instaladas en pruebas el 2 nov: clientas, etapas con historial, recordatorios, consentimiento obligatorio, exportar y borrar, soporte de solo lectura para la administradora. 17 comprobaciones de navegador, 236 pruebas automáticas. Probadas por la usuaria en pruebas: "funciona". Errores hallados en la prueba manual: la palabra "null" en pantalla (corregida en 15b y cubierta por una prueba). Pendiente solo en pruebas; NO en producción |
 | Para llevar el Gestor a producción | Node 22 para `yanbal-assistant` (hoy Node 18 del sistema); llave propia `GESTOR_LLAVE` creada en el servidor, sin copiar la de pruebas; copia de seguridad consistente de `gestor.db` (no basta copiar archivos con la base abierta); `chmod 600 data/gestor.db*`; revisión legal del texto de consentimiento (habeas data); asignar el módulo `manager` a las usuarias; plan de reversión |
 | Respaldo de la base del Gestor (Entregas 16 y 16b) | Diseño aprobado (`DISENO_RESPALDO_GESTOR_v1.md`), scripts instalados y ensayados en pruebas; el cron y la exclusión del `tar` de `respaldo-yanbal.sh` se hacen al pasar el Gestor a producción |
+
+## 16. Cierre del 2 de noviembre de 2026 y plan para continuar el 3 de noviembre
+
+| Frente | Estado al cierre |
+|---|---|
+| Producción | v2 con Comercial, Contenido y administración de usuarios; Entrega 14 (compra especial) instalada; **C12 programado**, entra solo el 7 nov 00:00 |
+| Pruebas | Con el Gestor completo (pantallas, respaldo y restauración), 248 pruebas; corre con el C12 simulado vigente |
+| Repositorio | Código y documentos al día en GitHub, sin Pull Request; redacción corregida tras un error propio (ver `CLAUDE.md`) |
+| Bloqueo para usar clientas reales | Revisión legal del consentimiento (habeas data) |
+
+**Orden recomendado para mañana:** (1) comprobar el respaldo de las 08:00 UTC; (2) consulta normal en producción; (3) decidir la revisión legal; (4) preparar el paso del Gestor a producción solo cuando (3) esté resuelto; (5) el 7 u 8 nov, 3 consultas con el C12 y luego `--promover`. La lista completa está en `CLAUDE.md`, sección "Siguiente paso inmediato".

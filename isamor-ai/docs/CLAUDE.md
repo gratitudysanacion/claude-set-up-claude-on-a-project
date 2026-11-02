@@ -1,7 +1,7 @@
 # CLAUDE.md — Proyecto ISAMOR AI · Plataforma comercial Yanbal
 
 > Archivo de contexto para Claude Code. Colócalo en la raíz de la carpeta de trabajo del proyecto junto a los demás .md.
-> Fecha de corte del contexto: **2 de noviembre de 2026**. El Asistente comercial, el Estudio de contenido y la administración de usuarios **están en producción**; el motor del Gestor de ventas está activo solo en pruebas; el catálogo C12 está preparado pero sin cargar.
+> Fecha de corte del contexto: **2 de noviembre de 2026 (cierre del día)**. El Asistente comercial, el Estudio de contenido y la administración de usuarios **están en producción**; el motor del Gestor de ventas está activo solo en pruebas; el catálogo C12 está preparado pero sin cargar.
 
 ## Idioma y estilo de trabajo
 - Responder siempre en español neutro.
@@ -75,7 +75,8 @@ Cuatro módulos, en este orden en el menú lateral: 1 Asistente comercial, 2 Ase
 - **Repositorio:** `gratitudysanacion/claude-set-up-claude-on-a-project`, rama **`claude/gracious-ptolemy-qm2mvv`**, carpeta **`isamor-ai/`** (el resto del repositorio es otro proyecto y no se toca). Primer envío: commit `f93308f` del 2 nov 2026. **Sin Pull Request** (decisión de la usuaria).
 - **Cuenta:** la conexión con GitHub es con la cuenta `gratitudysanacion` (correo [correo-redactado]). El envío falló varias veces con 403 hasta instalar la app de Claude en esa cuenta para ese repositorio (https://github.com/apps/claude/installations/select_target).
 - **Lo que se sube:** código, pruebas, scripts y documentos **sin secretos** (ni `.env`, usuarios, catálogos, bases de datos ni llaves). En la copia del repositorio se **redactan** las IP, las huellas de llaves, el nombre completo y el correo; las copias completas de los documentos las conserva la usuaria en su PC.
-- Pendiente: comprobar si el repositorio es privado (no se pudo verificar) y subir los cambios posteriores al 2 nov.
+- Pendiente: comprobar que el repositorio sea privado (no se pudo verificar).
+- **Redacción de la copia del repositorio (procedimiento fijo; el 2 nov se hizo mal una vez y quedaron un correo y un prefijo de huella en el commit `62bc466`):** a los documentos de `docs-v2` se les quita `Isabel Cristina Moreno, `, se cambia `USUARIA` por `USUARIA`, toda IP por `[IP-REDACTADA]`, el correo por `[correo-redactado]` y las huellas de llaves por `[huella-redactada]`. **Nunca** se copia un documento sin esa redacción: lo más seguro es partir de la versión ya redactada del repositorio y añadir solo lo nuevo. Antes de cada commit: `git grep -n "@gmail\|SHA256:" -- isamor-ai` y buscar IP debe dar vacío. Un `--force` o `--amend` sobre lo ya subido lo bloquea el sistema: se corrige con un commit nuevo.
 
 ## Dónde está el trabajo pendiente
 - Estado, hallazgos de seguridad y plan de acción: `ESTADO_PROYECTO_Y_PENDIENTES.md`
@@ -87,18 +88,32 @@ Cuatro módulos, en este orden en el menú lateral: 1 Asistente comercial, 2 Ase
 - Administración de usuarios (diseño, API, salvaguardas): `DISENO_ADMIN_USUARIOS_v1.md`
 - Despliegue, actualización, reversión y servidor de pruebas: `GUIA_DESPLIEGUE_Y_ACTUALIZACION.md`
 
-## Siguiente paso inmediato (2 nov 2026)
+## Siguiente paso inmediato (al cierre del 2 nov 2026; continuar el 3 nov)
 
-**Fechas:** martes 3 nov vencen los créditos de Claude en la nube de la usuaria · viernes 6 nov termina la campaña C11 · **sábado 7 nov 00:00 (Colombia) entra el C12** (hasta el 4 dic).
+**Fechas:** martes 3 nov vencen los créditos de Claude en la nube de la usuaria · viernes 6 nov termina la campaña C11 · **sábado 7 nov 00:00 (Colombia) entra solo el C12** (hasta el 4 dic).
 
-1. **C12 (plazo real: jueves 5 nov):** la usuaria debe comprobar contra el PDF las páginas 26 y 56 (14 filas "Revisar") y las páginas 66 y 113 (5104 y 43891: ¿solo dentro del set?), y decidir la "compra especial" (60099, 60100, 60121, 60124). Luego: convertir con `--aprobar`, ensayo, programar y reiniciar el asistente de producción (la campaña siguiente se lee al arrancar). Producción **ya tiene la v2**, así que puede entrar sola. Ver `GUIA_CARGA_CAMPANA.md`.
-2. **Documentación y código al repositorio:** subir los cambios posteriores al commit `f93308f`.
-3. **Gestor de ventas:** terminar las pantallas (Entrega 14) y luego la redacción asistida. Antes de activarlo en producción: Node 22 para `yanbal-assistant`, llave propia, respaldo consistente de la base SQLite y revisión legal del consentimiento.
-4. **Producción, ajustes menores:** el usuario `admin` de producción tiene los cuatro módulos; ajustarlo desde el módulo Usuarios si se desea. Comprobar el respaldo automático de las 08:00 UTC con el código nuevo.
-5. Seguridad pendiente: Nginx (`autorizo nginx`), 60 actualizaciones (sin pasar a Ubuntu 26.04) y 1 no instalada, Node 18 sin soporte, hallazgos A y B del panel, limpieza de `/root/panel-staging/`, `known_hosts` y copias `v3-antes-*`, Git en el servidor.
-6. Mejora de interfaz anotada: un acceso de inicio de sesión visible desde la pantalla de inicio.
+**Hecho el 2 nov:** v2 y administración de usuarios en producción; Entrega 14 (compra especial y `--correcciones`) en pruebas **y producción**; **C12 programado en producción** (451 productos, 7 nov al 4 dic) y asistente reiniciado (el registro confirma "Campaña siguiente programada"); pantallas del Gestor (Entregas 15 y 15b) y respaldo/restauración de su base (Entregas 16 y 16b) **solo en pruebas**; documentos y código en GitHub (último commit de esta etapa: ver `git log`).
 
-**Pendientes de la usuaria:** copia fuera del PC de `isamor_ed25519` y su passphrase; `ADMIN_USER`/`ADMIN_PASSWORD` del panel, la clave de `admin` del asistente y la llave del Gestor en el gestor de contraseñas; descargar `baseline-20261026`; instantáneas en hPanel; desglose de **Costo** de la consola de Anthropic (~0,43 USD sin explicar); `chmod 600` a `data/gestor.db*` en pruebas; respuestas del C12.
+**Estado del servidor de pruebas:** corre con el C12 simulado vigente (variables `CATALOGO_LECTURA` y `CAMPANA` que apuntan a `data/catalogo_lectura_siguiente.json` y a `/root/asistente-v2-pruebas/campana-c12-prueba.json`). Para volver al arranque normal: ver `GUIA_DESPLIEGUE_Y_ACTUALIZACION.md`, sección 7.
+
+**Lista para el 3 nov (en este orden):**
+1. La usuaria pega `tail -3 /opt/respaldos-yanbal/respaldo.log` (el respaldo de las 08:00 UTC del 2 nov debe decir OK con el código nuevo).
+2. La usuaria hace una consulta normal en producción (sesión nueva: el reinicio cerró las sesiones) y confirma que sigue respondiendo con C11.
+3. Revisión legal del texto de consentimiento del Gestor (habeas data, Ley 1581) — **bloquea** usar clientas reales.
+4. **El 7 u 8 nov:** 3 consultas reales en producción (producto normal, 2 x 1 y 60099) y banner "C12 2026"; luego `node scripts/cargar-campana.js --promover --aplicar` en `/opt/yanbal-assistant` (con su frase de autorización).
+5. Paso del Gestor a producción (solo con 3 resuelto): Node 22 para `yanbal-assistant`, `GESTOR_LLAVE` propia escrita oculta en el servidor y guardada en el gestor de contraseñas, asignar el módulo `manager`, `--exclude='gestor.db*'` en el `tar` de `respaldo-yanbal.sh` (con copia previa del script), cron `10 8 * * *` con `/opt/node22/bin/node` para `scripts/respaldar-gestor.js` hacia `/opt/respaldos-yanbal/gestor/` (diseño en `DISENO_RESPALDO_GESTOR_v1.md`), copiar los scripts por `actualizar.sh`, copia externa semanal. Cada paso con respaldo, reversión y su frase.
+6. Limpieza (con autorización; el borrado en mensaje aparte): `/root/asistente-v2-pruebas/practica-restauracion`, `/root/asistente-v2-pruebas/respaldos-gestor-prueba` (contienen una clienta de prueba cifrada), copias `v3-antes-*`, `/root/panel-staging/`, `known_hosts`.
+7. Seguridad pendiente: Nginx (`autorizo nginx`), 60 actualizaciones (sin pasar a Ubuntu 26.04), Node 18 sin soporte, hallazgos A y B del panel, `campana.json` y `catalogo.json` de producción en 644, carpeta `baseline-20261026` en 755, renovar la API key antes del 30 abr 2027.
+8. Mejoras anotadas: acceso de inicio de sesión visible desde la pantalla de inicio; tipo de letra de las pestañas del Gestor (serif en lugar del de los botones); categoría de 60124 ("Perfumes y colonias") se puede corregir con `--correcciones`; Gestor: redacción asistida por IA (después).
+
+**Pendientes de la usuaria:** copia fuera del PC de `isamor_ed25519` y su passphrase; `ADMIN_USER`/`ADMIN_PASSWORD` del panel, la clave de `admin` del asistente y la llave del Gestor en el gestor de contraseñas; descargar `baseline-20261026`; instantáneas en hPanel; desglose de **Costo** de la consola de Anthropic (~0,43 USD sin explicar); `chmod 600` a `data/gestor.db*` en pruebas; verificar que el repositorio de GitHub sea privado.
 
 ### Regla de negocio: compra especial (aprobada por la usuaria el 2 nov 2026)
 Un artículo cuya promoción empieza por "Compra especial", con precio de oferta y sin precio normal, solo se adquiere con la compra de un producto y **no se vende suelto**. Cada vez que el asistente o el Estudio de contenido citen su precio deben aclararlo en el mismo texto; el código lo verifica (`verificarCompraEspecial`) y, si falta, entrega la ficha del catálogo, que siempre lo dice.
+
+### Lecciones operativas de la sesión del 2 nov 2026
+- Indicar siempre **en qué ventana** se pega cada comando: PowerShell del PC (`PS C:\Users\USUARIA>`; el túnel SSH va allí) o terminal del servidor (`root@srv1779034`). El túnel pegado en el servidor falla con "Identity file not accessible".
+- El comando del túnel debe llevar la IP real del servidor, no un texto de ejemplo.
+- Cada cambio en el servidor lleva su frase (`autorizo entrega N`, `autorizo reiniciar pruebas`, `autorizo actualizar`, `autorizo programar c12 …`); los comandos de reversión van en un mensaje aparte.
+- Las pruebas de navegador deben buscar también texto basura ("null", "undefined"): una carrera en una prueba y un `replaceChildren(null)` pasaron desapercibidos hasta la prueba manual.
+- Una prueba que falla una vez no se descarta: se repite varias veces tras corregirla.

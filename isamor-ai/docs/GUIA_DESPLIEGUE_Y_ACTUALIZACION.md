@@ -64,3 +64,26 @@ El script **no borra nada** y **aborta sin cambiar nada** si la v1 fue alterada,
 | Reinicios y sesiones | Reiniciar el asistente cierra las sesiones abiertas y limpia los bloqueos de intentos |
 | `usuarios.json` al arrancar | Se lee al arrancar: editarlo a mano exige reiniciar; desde el módulo Usuarios no |
 | Registro de pruebas | Se sobrescribe en cada reinicio |
+
+## 7. Servidor de pruebas con el C12 simulado, y cómo volver al arranque normal (2 nov 2026)
+
+Para ver el C12 antes de su fecha de inicio sin tocar los archivos programados, el servidor de pruebas se arrancó con dos variables:
+- `CATALOGO_LECTURA=/root/asistente-v2-pruebas/v3/data/catalogo_lectura_siguiente.json`
+- `CAMPANA=/root/asistente-v2-pruebas/campana-c12-prueba.json` (copia de `campana_siguiente.json` con inicio el 2026-11-01).
+
+**Volver al arranque normal** (misma secuencia de arranque de la sección 2, sin esas dos variables; necesita la frase `autorizo reiniciar pruebas`). Hasta el 7 nov el catálogo de pruebas será entonces el C11.
+
+## 8. Entregas al servidor de pruebas del 2 nov (14, 15, 15b, 16, 16b)
+
+| Entrega | Contenido | Instalación |
+|---|---|---|
+| 14 | Compra especial, `--correcciones`, `deploy/c12-correcciones.json` | Pruebas y producción (`actualizar.sh`; `server.js` no cambió) |
+| 15 y 15b | Pantallas del Gestor (la 15b corrige un "null" en pantalla) | Solo pruebas; `public/gestor.js` se lee en cada petición, no exige reinicio |
+| 16 y 16b | `scripts/respaldar-gestor.js` y `scripts/restaurar-gestor.js` | Solo pruebas |
+
+Todas se instalan con el `entregaN_pegar.txt` (verifica huella, copia `v3-antes-N`, extrae, revisa sintaxis y corre las pruebas con Node 22). Estado de la suite: **248 pruebas** con Node 22; 212 con Node 18 (las del SQLite se omiten).
+
+## 9. Carga del C12 en producción (hecha el 2 nov)
+
+`actualizar.sh` (Entrega 14) → `cargar-campana.js --origen /root/c12-entrada/c12-consolidado.json --campana "C12 2026" --desde 2026-11-07 --hasta 2026-12-04 --esperados 451 --aplicar` en `/opt/yanbal-assistant` → `pm2 restart yanbal-assistant --update-env`. El registro debe decir "Campaña siguiente programada: C12 2026 (451 productos)". Reversión: borrar `data/campana_siguiente.json` y `data/catalogo_lectura_siguiente.json` y reiniciar. Después del 7 nov: `--promover --aplicar`.
+

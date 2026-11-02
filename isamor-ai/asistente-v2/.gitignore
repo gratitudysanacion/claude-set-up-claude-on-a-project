@@ -1,0 +1,11 @@
+.env
+data/usuarios.json
+data/catalogo_lectura.json
+data/*.tmp
+node_modules/
+*.log
+data/gestor.db
+data/gestor.db-wal
+data/gestor.db-shm
+data/*.db
+data/usuarios.json.anterior

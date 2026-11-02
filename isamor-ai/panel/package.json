@@ -1,0 +1,8 @@
+{
+  "name": "yanbal-catalog-admin-starter",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Panel inicial independiente para administrar el catálogo Yanbal; no modifica Gratitud y Sanación.",
+  "scripts": {"start": "node server.js"},
+  "engines": {"node": ">=18"}
+}

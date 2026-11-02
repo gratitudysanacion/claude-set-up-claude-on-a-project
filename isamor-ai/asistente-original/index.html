@@ -1,0 +1,829 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#f47721">
+  <meta name="description" content="Asistente comercial Yanbal: belleza, contenido y organización de ventas.">
+  <title>Yanbal | Asistente Comercial</title>
+
+  <style>
+    :root {
+      --wine: #f47721;
+      --wine-dark: #c94f0b;
+      --pink: #fff0e3;
+      --gold: #e9a15b;
+      --ink: #30271f;
+      --muted: #786d63;
+      --paper: #fffaf5;
+      --white: #ffffff;
+      --border: #f0dfd0;
+      --green: #31785c;
+      --shadow: 0 12px 40px rgba(132, 67, 24, .09);
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      color: var(--ink);
+      background: var(--paper);
+      font-family: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI",
+                   Roboto, Arial, sans-serif;
+    }
+
+    button, textarea {
+      font: inherit;
+    }
+
+    button {
+      cursor: pointer;
+    }
+
+    .layout {
+      min-height: 100vh;
+      display: grid;
+      grid-template-columns: 255px minmax(0, 1fr);
+    }
+
+    .sidebar {
+      padding: 28px 18px;
+      color: white;
+      background: linear-gradient(165deg, var(--wine-dark), var(--wine));
+      display: flex;
+      flex-direction: column;
+      gap: 32px;
+    }
+
+    .brand {
+      padding: 4px 10px 22px;
+      border-bottom: 1px solid rgba(255,255,255,.18);
+    }
+
+    .brand-logo {
+      display: block;
+      width: 170px;
+      max-width: 100%;
+      height: auto;
+      object-fit: contain;
+      object-position: left center;
+      margin-bottom: 10px;
+      border-radius: 4px;
+    }
+
+    .brand-name {
+      font-family: Georgia, "Times New Roman", serif;
+      font-size: 31px;
+      letter-spacing: 2px;
+      font-weight: 600;
+    }
+
+    .brand-caption {
+      margin-top: 8px;
+      font-size: 10px;
+      letter-spacing: 2.3px;
+      text-transform: uppercase;
+      color: #ead3e0;
+    }
+
+    .nav-label {
+      padding: 0 12px;
+      margin-bottom: 12px;
+      font-size: 10px;
+      letter-spacing: 1.8px;
+      text-transform: uppercase;
+      color: #e3bfd3;
+    }
+
+    .nav {
+      display: grid;
+      gap: 8px;
+    }
+
+    .nav button {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      width: 100%;
+      padding: 13px 12px;
+      color: #f8eaf1;
+      border: 1px solid transparent;
+      border-radius: 11px;
+      background: transparent;
+      text-align: left;
+      font-size: 13px;
+      transition: background .2s ease;
+    }
+
+    .nav button:hover,
+    .nav button.active {
+      color: white;
+      background: rgba(255,255,255,.13);
+      border-color: rgba(255,255,255,.13);
+    }
+
+    .nav-icon {
+      width: 23px;
+      text-align: center;
+      font-size: 18px;
+    }
+
+    .sidebar-note {
+      margin-top: auto;
+      padding: 15px;
+      border: 1px solid rgba(255,255,255,.2);
+      border-radius: 12px;
+      color: #f3dfe9;
+      font-size: 12px;
+      line-height: 1.65;
+    }
+
+    .sidebar-note strong {
+      display: block;
+      margin-bottom: 6px;
+      color: white;
+    }
+
+    .main {
+      min-width: 0;
+      padding: 30px clamp(20px, 4vw, 56px) 45px;
+    }
+
+    .topbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      padding-bottom: 23px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .eyebrow {
+      color: var(--wine);
+      font-size: 11px;
+      letter-spacing: 1.8px;
+      text-transform: uppercase;
+      font-weight: 700;
+    }
+
+    .topbar-title {
+      margin: 7px 0 0;
+      font-family: Georgia, "Times New Roman", serif;
+      font-size: 24px;
+      font-weight: 500;
+    }
+
+    .status {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 9px 12px;
+      border: 1px solid #d9e9df;
+      border-radius: 30px;
+      background: #f3faf5;
+      color: var(--green);
+      white-space: nowrap;
+      font-size: 11px;
+    }
+
+    .status-dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: #4a9b71;
+    }
+
+    .welcome {
+      position: relative;
+      overflow: hidden;
+      margin: 29px 0 27px;
+      padding: clamp(25px, 4vw, 45px);
+      border-radius: 20px;
+      color: white;
+      background: linear-gradient(115deg, #c94f0b, #f47721 60%, #ffad66);
+      box-shadow: var(--shadow);
+    }
+
+    .welcome:after {
+      content: "Y";
+      position: absolute;
+      right: 28px;
+      top: -65px;
+      color: rgba(255,255,255,.07);
+      font-family: Georgia, serif;
+      font-size: 290px;
+      pointer-events: none;
+    }
+
+    .welcome-content {
+      position: relative;
+      z-index: 1;
+      max-width: 620px;
+    }
+
+    .welcome-kicker {
+      color: #f0d4e2;
+      font-size: 11px;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+    }
+
+    .welcome h1 {
+      margin: 15px 0 13px;
+      font-family: Georgia, "Times New Roman", serif;
+      font-size: clamp(31px, 4vw, 45px);
+      line-height: 1.13;
+      font-weight: 500;
+    }
+
+    .welcome p {
+      max-width: 500px;
+      margin: 0;
+      color: #f7e8ef;
+      font-size: 14px;
+      line-height: 1.8;
+    }
+
+    .section-heading {
+      display: flex;
+      align-items: end;
+      justify-content: space-between;
+      gap: 15px;
+      margin: 30px 0 16px;
+    }
+
+    .section-heading h2 {
+      margin: 0;
+      font-family: Georgia, "Times New Roman", serif;
+      font-size: 25px;
+      font-weight: 500;
+    }
+
+    .section-heading p {
+      margin: 6px 0 0;
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.6;
+    }
+
+    .cards {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 15px;
+    }
+
+    .card {
+      padding: 22px;
+      border: 1px solid var(--border);
+      border-radius: 15px;
+      background: var(--white);
+      text-align: left;
+      box-shadow: 0 3px 15px rgba(69, 23, 52, .025);
+      transition: transform .2s, box-shadow .2s, border-color .2s;
+    }
+
+    .card:hover {
+      transform: translateY(-2px);
+      border-color: #d9b5ca;
+      box-shadow: var(--shadow);
+    }
+
+    .card-icon {
+      display: grid;
+      place-items: center;
+      width: 45px;
+      height: 45px;
+      margin-bottom: 17px;
+      border-radius: 13px;
+      background: var(--pink);
+      color: var(--wine);
+      font-size: 22px;
+    }
+
+    .card h3 {
+      margin: 0 0 9px;
+      font-size: 16px;
+      font-weight: 650;
+    }
+
+    .card p {
+      min-height: 42px;
+      margin: 0;
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.7;
+    }
+
+    .card-action {
+      display: inline-block;
+      margin-top: 18px;
+      color: var(--wine);
+      font-size: 12px;
+      font-weight: 700;
+    }
+
+    .workspace {
+      display: none;
+      margin-top: 27px;
+      padding: clamp(20px, 3vw, 32px);
+      border: 1px solid var(--border);
+      border-radius: 17px;
+      background: white;
+      box-shadow: var(--shadow);
+    }
+
+    .workspace.visible {
+      display: block;
+    }
+
+    .workspace h2 {
+      margin: 0 0 8px;
+      font-family: Georgia, serif;
+      font-size: 27px;
+      font-weight: 500;
+    }
+
+    .workspace-intro {
+      margin: 0 0 22px;
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.7;
+    }
+
+    .demo-notice {
+      padding: 13px 15px;
+      margin-bottom: 20px;
+      border: 1px solid #ead9b9;
+      border-radius: 10px;
+      color: #745526;
+      background: #fffaf0;
+      font-size: 12px;
+      line-height: 1.65;
+    }
+
+    .suggestions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin: 15px 0 20px;
+    }
+
+    .suggestions button {
+      padding: 10px 12px;
+      border: 1px solid #e7d8e1;
+      border-radius: 30px;
+      color: var(--wine);
+      background: #fffafd;
+      font-size: 12px;
+    }
+
+    .suggestions button:hover {
+      background: var(--pink);
+    }
+
+    .chat-log {
+      display: grid;
+      gap: 12px;
+      margin-bottom: 17px;
+    }
+
+    .message {
+      max-width: 90%;
+      padding: 13px 15px;
+      border-radius: 12px;
+      font-size: 13px;
+      line-height: 1.7;
+      white-space: pre-wrap;
+      overflow-wrap: anywhere;
+    }
+
+    .message.assistant {
+      justify-self: start;
+      border: 1px solid var(--border);
+      background: #fcf8fb;
+    }
+
+    .message.user {
+      justify-self: end;
+      color: white;
+      background: var(--wine);
+    }
+
+    .composer {
+      display: flex;
+      align-items: end;
+      gap: 10px;
+    }
+
+    .composer textarea {
+      flex: 1;
+      min-width: 0;
+      min-height: 48px;
+      max-height: 140px;
+      padding: 13px 14px;
+      resize: vertical;
+      border: 1px solid #e5d9e1;
+      border-radius: 11px;
+      outline: none;
+      background: white;
+      font-size: 13px;
+    }
+
+    .composer textarea:focus {
+      border-color: var(--wine);
+      box-shadow: 0 0 0 3px rgba(114,22,77,.08);
+    }
+
+    .primary {
+      min-height: 46px;
+      padding: 0 19px;
+      border: 0;
+      border-radius: 10px;
+      color: white;
+      background: var(--wine);
+      font-size: 12px;
+      font-weight: 700;
+    }
+
+    .primary:hover {
+      background: var(--wine-dark);
+    }
+
+    .secondary {
+      padding: 9px 13px;
+      border: 1px solid var(--border);
+      border-radius: 9px;
+      color: var(--wine);
+      background: white;
+      font-size: 12px;
+    }
+
+    .footer {
+      margin-top: 34px;
+      padding-top: 17px;
+      border-top: 1px solid var(--border);
+      color: var(--muted);
+      font-size: 11px;
+      line-height: 1.7;
+      text-align: center;
+    }
+
+    @media (max-width: 760px) {
+      .layout {
+        grid-template-columns: 1fr;
+      }
+
+      .sidebar {
+        gap: 18px;
+        padding: 18px;
+      }
+
+      .brand {
+        padding-bottom: 14px;
+      }
+
+      .brand-name {
+        font-size: 27px;
+      }
+
+      .nav-label {
+        display: none;
+      }
+
+      .nav {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+
+      .nav button {
+        padding: 11px 9px;
+        font-size: 11px;
+      }
+
+      .sidebar-note {
+        margin-top: 0;
+      }
+
+      .main {
+        padding: 20px 17px 30px;
+      }
+
+      .topbar-title {
+        font-size: 20px;
+      }
+
+      .status {
+        font-size: 10px;
+        padding: 8px 9px;
+      }
+
+      .cards {
+        grid-template-columns: 1fr;
+      }
+
+      .card p {
+        min-height: auto;
+      }
+
+      .welcome {
+        margin-top: 20px;
+      }
+
+      .welcome:after {
+        right: -40px;
+        font-size: 200px;
+      }
+
+      .section-heading {
+        align-items: start;
+      }
+
+      .composer {
+        flex-direction: column;
+        align-items: stretch;
+      }
+
+      .primary {
+        width: 100%;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <div class="layout">
+    <aside class="sidebar">
+      <div class="brand">
+        <img
+          src="/yanbal-logo.jpg"
+          alt="YANBAL"
+          class="brand-logo"
+        >
+        <div class="brand-caption">Asistente comercial</div>
+      </div>
+
+      <div>
+        <div class="nav-label">Tu espacio de trabajo</div>
+
+        <nav class="nav" aria-label="Módulos principales">
+          <button class="active" data-module="home">
+            <span class="nav-icon">⌂</span> Inicio
+          </button>
+          <button data-module="sales">
+            <span class="nav-icon">♡</span> Asistente comercial
+          </button>
+          <button data-module="beauty">
+            <span class="nav-icon">✧</span> Asesor de belleza
+          </button>
+          <button data-module="content">
+            <span class="nav-icon">▧</span> Estudio de contenido
+          </button>
+          <button data-module="manager">
+            <span class="nav-icon">◷</span> Gestor de ventas
+          </button>
+        </nav>
+      </div>
+
+      <div class="sidebar-note">
+        <strong>Un espacio para crecer</strong>
+        Organiza tus ideas, prepara tus contenidos y fortalece tu estrategia comercial.
+      </div>
+    </aside>
+
+    <main class="main">
+      <header class="topbar">
+        <div>
+          <div class="eyebrow">Tu negocio, en un solo lugar</div>
+          <div class="topbar-title">Centro de trabajo Yanbal</div>
+        </div>
+
+        <div class="status">
+          <span class="status-dot"></span>
+          Interfaz disponible
+        </div>
+      </header>
+
+      <section class="welcome" id="welcome">
+        <div class="welcome-content">
+          <div class="welcome-kicker">Belleza · Creatividad · Ventas</div>
+          <h1>Convierte tus ideas en nuevas oportunidades.</h1>
+          <p>
+            Un espacio de trabajo para preparar contenido, organizar tu actividad
+            comercial y ofrecer una experiencia más cercana a tus clientes.
+          </p>
+        </div>
+      </section>
+
+      <section id="home-section">
+        <div class="section-heading">
+          <div>
+            <h2>¿En qué quieres trabajar hoy?</h2>
+            <p>Elige el módulo que necesitas.</p>
+          </div>
+        </div>
+
+        <div class="cards">
+          <button class="card" data-module="sales">
+            <span class="card-icon">♡</span>
+            <h3>Asistente comercial</h3>
+            <p>Prepara mensajes para clientes, respuestas a preguntas frecuentes e ideas para mejorar tu atención.</p>
+            <span class="card-action">Explorar módulo →</span>
+          </button>
+
+          <button class="card" data-module="beauty">
+            <span class="card-icon">✧</span>
+            <h3>Asesor de belleza</h3>
+            <p>Organiza consultas sobre perfumes, maquillaje y cuidado personal a partir de información verificada.</p>
+            <span class="card-action">Explorar módulo →</span>
+          </button>
+
+          <button class="card" data-module="content">
+            <span class="card-icon">▧</span>
+            <h3>Estudio de contenido</h3>
+            <p>Planifica Reels, publicaciones, textos comerciales y propuestas de contenido para redes sociales.</p>
+            <span class="card-action">Explorar módulo →</span>
+          </button>
+
+          <button class="card" data-module="manager">
+            <span class="card-icon">◷</span>
+            <h3>Gestor de ventas</h3>
+            <p>Prepara listas de seguimiento, organiza prioridades y estructura tus próximas acciones comerciales.</p>
+            <span class="card-action">Explorar módulo →</span>
+          </button>
+        </div>
+      </section>
+
+      <section class="workspace" id="workspace" aria-live="polite">
+        <button class="secondary" id="back-home">← Volver al inicio</button>
+
+        <div class="section-heading">
+          <div>
+            <h2 id="workspace-title">Asistente comercial</h2>
+            <p id="workspace-description"></p>
+          </div>
+        </div>
+
+        <div class="demo-notice">
+          <strong>Versión inicial:</strong> la interfaz ya está disponible, pero
+          la conexión con inteligencia artificial y el catálogo de productos
+          todavía no está habilitada. No ingreses datos personales de clientes.
+        </div>
+
+        <div class="suggestions" id="suggestions"></div>
+        <div class="chat-log" id="chat-log"></div>
+
+        <form class="composer" id="composer">
+          <textarea
+            id="message-input"
+            maxlength="1500"
+            rows="2"
+            aria-label="Escribe una idea o solicitud"
+            placeholder="Escribe aquí lo que necesitas preparar..."
+          ></textarea>
+          <button class="primary" type="submit">Preparar solicitud</button>
+        </form>
+      </section>
+
+      <footer class="footer">
+        Yanbal · Centro de trabajo comercial<br>
+        Interfaz inicial. Las funciones de IA y las consultas al catálogo
+        se habilitarán en una etapa posterior.
+      </footer>
+    </main>
+  </div>
+
+  <script>
+    const modules = {
+      sales: {
+        title: "Asistente comercial",
+        description: "Prepara solicitudes para atender mejor a tus clientes.",
+        prompts: [
+          "Quiero preparar un mensaje para una clienta.",
+          "Ayúdame a responder una pregunta sobre un producto.",
+          "Quiero presentar una promoción de manera atractiva."
+        ]
+      },
+      beauty: {
+        title: "Asesor de belleza",
+        description: "Organiza tus consultas de belleza sin inventar características de productos.",
+        prompts: [
+          "Quiero organizar una consulta sobre perfumes.",
+          "Necesito estructurar una recomendación de maquillaje.",
+          "Quiero comparar productos con información verificada."
+        ]
+      },
+      content: {
+        title: "Estudio de contenido",
+        description: "Prepara ideas para redes sociales y campañas comerciales.",
+        prompts: [
+          "Quiero una idea para un Reel de 15 segundos.",
+          "Necesito un texto para una publicación de Instagram.",
+          "Quiero planificar contenido para una semana."
+        ]
+      },
+      manager: {
+        title: "Gestor de ventas",
+        description: "Estructura tus actividades y organiza el seguimiento comercial.",
+        prompts: [
+          "Quiero crear una lista de tareas comerciales.",
+          "Ayúdame a estructurar un plan semanal de ventas.",
+          "Necesito organizar el seguimiento de pedidos."
+        ]
+      }
+    };
+
+    const homeSection = document.getElementById("home-section");
+    const welcome = document.getElementById("welcome");
+    const workspace = document.getElementById("workspace");
+    const title = document.getElementById("workspace-title");
+    const description = document.getElementById("workspace-description");
+    const suggestions = document.getElementById("suggestions");
+    const chatLog = document.getElementById("chat-log");
+    const input = document.getElementById("message-input");
+
+    function addMessage(text, type) {
+      const item = document.createElement("div");
+      item.className = "message " + type;
+      item.textContent = text;
+      chatLog.appendChild(item);
+    }
+
+    function openModule(key) {
+      document.querySelectorAll("[data-module]").forEach(button => {
+        button.classList.toggle(
+          "active",
+          button.dataset.module === key
+        );
+      });
+
+      if (key === "home") {
+        homeSection.style.display = "";
+        welcome.style.display = "";
+        workspace.classList.remove("visible");
+        return;
+      }
+
+      const selected = modules[key];
+      if (!selected) return;
+
+      homeSection.style.display = "none";
+      welcome.style.display = "none";
+      workspace.classList.add("visible");
+
+      title.textContent = selected.title;
+      description.textContent = selected.description;
+      suggestions.replaceChildren();
+      chatLog.replaceChildren();
+
+      selected.prompts.forEach(prompt => {
+        const button = document.createElement("button");
+        button.type = "button";
+        button.textContent = prompt;
+        button.addEventListener("click", () => {
+          input.value = prompt;
+          input.focus();
+        });
+        suggestions.appendChild(button);
+      });
+
+      addMessage(
+        "Bienvenida. Este módulo está preparado para organizar tu solicitud. " +
+        "La generación automática de respuestas se habilitará cuando conectemos la IA.",
+        "assistant"
+      );
+    }
+
+    document.querySelectorAll("[data-module]").forEach(button => {
+      button.addEventListener("click", () => {
+        openModule(button.dataset.module);
+      });
+    });
+
+    document.getElementById("back-home").addEventListener("click", () => {
+      openModule("home");
+    });
+
+    document.getElementById("composer").addEventListener("submit", event => {
+      event.preventDefault();
+
+      const text = input.value.trim();
+      if (!text) {
+        input.focus();
+        return;
+      }
+
+      addMessage(text, "user");
+      addMessage(
+        "Tu solicitud quedó visible en esta sesión del navegador. " +
+        "Todavía no se envía a una IA ni se guarda en el servidor. " +
+        "Cuando conectemos el servicio de IA, este espacio podrá generar " +
+        "una respuesta basada en la información disponible y verificada.",
+        "assistant"
+      );
+
+      input.value = "";
+    });
+  </script>
+</body>
+</html>

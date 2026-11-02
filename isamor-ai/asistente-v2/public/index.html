@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#f47721">
+  <meta name="description" content="Asistente comercial Yanbal: consulta de precios, ofertas y vigencias del catálogo.">
+  <title>Yanbal | Asistente Comercial</title>
+  <link rel="stylesheet" href="/styles.css">
+</head>
+
+<body>
+  <div class="layout">
+    <aside class="sidebar">
+      <div class="brand">
+        <img src="/yanbal-logo.jpg" alt="YANBAL" class="brand-logo">
+        <div class="brand-caption">Asistente comercial</div>
+      </div>
+
+      <div>
+        <div class="nav-label">Tu espacio de trabajo</div>
+
+        <nav class="nav" aria-label="Módulos principales">
+          <button class="active" data-module="home"><span class="nav-icon">⌂</span> Inicio</button>
+          <button data-module="sales"><span class="nav-icon">♡</span> Asistente comercial</button>
+          <button data-module="beauty"><span class="nav-icon">✧</span> Asesor de belleza</button>
+          <button data-module="content"><span class="nav-icon">▧</span> Estudio de contenido</button>
+          <button data-module="manager"><span class="nav-icon">◷</span> Gestor de ventas</button>
+          <button data-module="users" id="nav-users" class="hidden"><span class="nav-icon">⚙</span> Usuarios</button>
+        </nav>
+      </div>
+
+      <div class="sidebar-note">
+        <strong>Un espacio para crecer</strong>
+        Organiza tus ideas, prepara tus contenidos y fortalece tu estrategia comercial.
+      </div>
+    </aside>
+
+    <main class="main">
+      <header class="topbar">
+        <div>
+          <div class="eyebrow">Tu negocio, en un solo lugar</div>
+          <div class="topbar-title">Centro de trabajo Yanbal</div>
+        </div>
+
+        <div class="status"><span class="status-dot"></span> Interfaz disponible</div>
+      </header>
+
+      <section class="welcome" id="welcome">
+        <div class="welcome-content">
+          <div class="welcome-kicker">Belleza · Creatividad · Ventas</div>
+          <h1>Convierte tus ideas en nuevas oportunidades.</h1>
+          <p>
+            Un espacio de trabajo para preparar contenido, organizar tu actividad
+            comercial y ofrecer una experiencia más cercana a tus clientes.
+          </p>
+        </div>
+      </section>
+
+      <section id="home-section">
+        <div class="section-heading">
+          <div>
+            <h2>¿En qué quieres trabajar hoy?</h2>
+            <p>Elige el módulo que necesitas.</p>
+          </div>
+        </div>
+
+        <div class="cards">
+          <button class="card" data-module="sales">
+            <span class="card-icon">♡</span>
+            <h3>Asistente comercial</h3>
+            <p>Consulta precios, ofertas y vigencias del catálogo.</p>
+            <span class="card-action">Explorar módulo →</span>
+          </button>
+
+          <button class="card" data-module="beauty">
+            <span class="card-icon">✧</span>
+            <h3>Asesor de belleza</h3>
+            <p>Organiza consultas sobre perfumes, maquillaje y cuidado personal a partir de información verificada.</p>
+            <span class="card-action">Explorar módulo →</span>
+          </button>
+
+          <button class="card" data-module="content">
+            <span class="card-icon">▧</span>
+            <h3>Estudio de contenido</h3>
+            <p>Crea guiones, descripciones, hashtags y textos de WhatsApp con precios y vigencias del catálogo.</p>
+            <span class="card-action">Explorar módulo →</span>
+          </button>
+
+          <button class="card" data-module="manager">
+            <span class="card-icon">◷</span>
+            <h3>Gestor de ventas</h3>
+            <p>Prepara listas de seguimiento, organiza prioridades y estructura tus próximas acciones comerciales.</p>
+            <span class="card-action">Explorar módulo →</span>
+          </button>
+        </div>
+      </section>
+
+      <section class="workspace" id="workspace" aria-live="polite">
+        <button class="secondary" id="back-home" type="button">← Volver al inicio</button>
+
+        <div class="section-heading">
+          <div>
+            <h2 id="workspace-title">Asistente comercial</h2>
+            <p id="workspace-description"></p>
+          </div>
+        </div>
+
+        <div class="demo-notice hidden" id="demo-notice">
+          <strong>Versión inicial:</strong> este módulo todavía no está conectado a inteligencia artificial
+          ni al catálogo de productos. No ingreses datos personales de clientes.
+        </div>
+
+        <div id="sales-extras" class="hidden">
+          <div class="campaign" id="campaign" role="status"></div>
+          <div class="review-label" id="review-label">
+            <strong>Catálogo en revisión:</strong> los datos de los productos aún no están confirmados.
+            Confirma precio, oferta y vigencia antes de ofrecerlos a una clienta.
+          </div>
+        </div>
+
+        <form class="login-box hidden" id="login-form" autocomplete="on">
+          <label>Usuario
+            <input id="login-user" name="usuario" type="text" autocomplete="username" maxlength="32" required>
+          </label>
+          <label>Clave
+            <input id="login-pass" name="clave" type="password" autocomplete="current-password" maxlength="200" required>
+          </label>
+          <div class="form-error" id="login-error" role="alert"></div>
+          <button class="primary" id="login-submit" type="submit">Iniciar sesión</button>
+        </form>
+
+        <div class="session-bar hidden" id="session-bar">
+          <span id="session-user"></span>
+          <button class="secondary" id="change-pass" type="button">Cambiar mi clave</button>
+          <button class="secondary" id="logout" type="button">Cerrar sesión</button>
+        </div>
+
+        <div class="review-label hidden" id="sin-permiso">
+          Este módulo todavía no está habilitado para tu usuario. Pide que lo activen y vuelve a entrar.
+        </div>
+
+        <div id="users-area" class="hidden"></div>
+        <div id="cuenta-area" class="hidden"></div>
+
+        <div id="chat-area">
+          <div class="suggestions" id="suggestions"></div>
+          <div class="chat-log" id="chat-log"></div>
+
+          <form class="composer" id="composer">
+            <textarea
+              id="message-input"
+              maxlength="1500"
+              rows="2"
+              aria-label="Escribe una idea o solicitud"
+              placeholder="Escribe aquí lo que necesitas preparar..."
+            ></textarea>
+            <button class="primary" id="send" type="submit">Enviar</button>
+          </form>
+        </div>
+      </section>
+
+      <footer class="footer">
+        Yanbal · Centro de trabajo comercial<br>
+        El Asistente comercial y el Estudio de contenido consultan el catálogo cargado. Los demás módulos se habilitarán en una etapa posterior. Las administradoras gestionan los usuarios desde el módulo Usuarios.
+      </footer>
+    </main>
+  </div>
+
+  <script src="/usuarios.js" defer></script>
+  <script src="/app.js" defer></script>
+</body>
+</html>

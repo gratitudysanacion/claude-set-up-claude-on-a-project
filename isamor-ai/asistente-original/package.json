@@ -1,0 +1,13 @@
+{
+  "name": "yanbal-assistant",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Asistente comercial para Yanbal",
+  "main": "src/server.js",
+  "scripts": {
+    "start": "node src/server.js"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}

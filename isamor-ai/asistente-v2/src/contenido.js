@@ -5,7 +5,7 @@
 // El modelo redacta; el código verifica y, si el texto incumple, le exige corregirlo una vez antes de rendirse.
 const { crearAgente } = require('./agente');
 const { HERRAMIENTAS, ejecutarHerramienta } = require('./ia');
-const { verificarRespuesta, importesEnTexto } = require('./verificador');
+const { verificarRespuesta, importesEnTexto, verificarCompraEspecial } = require('./verificador');
 const { fichaDeterminista, advertenciasDe, pesos } = require('./respaldo');
 
 // Expresiones que no pueden aparecer en ningún texto generado (se comparan sin tildes y en minúsculas).
@@ -59,6 +59,7 @@ DATOS DE PRODUCTOS (obligatorio)
 - La vigencia (fecha dd/mm/aaaa, por ejemplo: vigente hasta 06/11/2026) es de la OFERTA: escríbela junto al precio de oferta, una sola vez. El precio normal va SIN fecha de vigencia ("Precio normal: $65.000" y luego "Oferta: $35.500, vigente hasta 06/11/2026"). Si el producto no tiene oferta, escribe el precio normal y la fecha de la campaña.
 - Si la campaña está vencida o aún no rige, o la oferta del producto no está vigente, NO escribas precios: usa solo descripción y hashtags, y avisa a la usuaria.
 - Si un producto trae tipo_promocion "2x1": su precio_normal es el de 1 unidad y la oferta es que, al comprar 1, recibe 2. Preséntalo así y NO menciones un precio por unidad.
+- Si trae tipo_promocion "compra_especial": es un artículo con precio propio que solo se adquiere con la compra de un producto (el que indica la promoción) y NO se vende suelto. Si escribes su precio, aclara SIEMPRE en el mismo texto que solo aplica con la compra de un producto y que no se vende suelto.
 - Si trae tipo_promocion "obsequio": es un regalo con la compra indicada en la promoción; no tiene precio ni se vende por separado.
 - No prometas stock ni tiempos de entrega.
 
@@ -121,6 +122,9 @@ function verificarContenido(texto, resultados) {
   const noDocumentadas = afirmacionesNoDocumentadas(texto, resultados);
   if (noDocumentadas.length) violaciones.push({ tipo: 'afirmaciones_no_documentadas', detalle: noDocumentadas.join('; ') });
 
+  const ce = verificarCompraEspecial(texto, resultados);
+  if (!ce.ok) violaciones.push({ tipo: 'compra_especial_sin_aclarar', detalle: 'precio de una compra especial sin aclarar que solo aplica con la compra de un producto y que no se vende suelto' });
+
   if (RE_CODIGO_CAMPANA.test(sinTildes(texto))) violaciones.push({ tipo: 'codigo_de_campana', detalle: 'código de campaña en el texto' });
 
   if (RE_ALFABETO_AJENO.test(texto)) violaciones.push({ tipo: 'caracteres_extranos', detalle: 'letras de otro alfabeto' });
@@ -140,6 +144,7 @@ function verificarContenido(texto, resultados) {
     precios_sin_vigencia: 'La campaña o la oferta no está vigente: no escribas ningún precio; deja solo descripción y hashtags.',
     falta_vigencia: 'Junto a los precios escribe la vigencia con fecha dd/mm/aaaa (por ejemplo: vigente hasta 06/11/2026).',
     caracteres_extranos: 'El texto trae letras de otro alfabeto (por ejemplo cirílico) que se ven como latinas y rompen los hashtags. Escribe todo solo con letras del alfabeto español.',
+    compra_especial_sin_aclarar: 'Junto al precio de la compra especial aclara que solo aplica con la compra de un producto (el de la promoción) y que no se vende suelto.',
     vigencia_en_precio_normal: 'La vigencia es de la oferta: quita la fecha de junto al precio normal y déjala solo junto al precio de oferta.'
   }[v.tipo]));
   return {
@@ -163,10 +168,11 @@ const MOTIVOS = {
   precios_sin_vigencia: 'ponía precios con la campaña u oferta no vigente',
   falta_vigencia: 'ponía precios sin su fecha de vigencia',
   caracteres_extranos: 'traía letras de otro alfabeto que rompen los hashtags',
+  compra_especial_sin_aclarar: 'no aclaraba que el precio de la compra especial solo aplica con la compra de un producto y que no se vende suelto',
   vigencia_en_precio_normal: 'ponía la fecha de vigencia junto al precio normal'
 };
 
-const TIPOS_CON_DATOS = new Set(['importe_no_respaldado', 'precios_sin_vigencia', 'falta_vigencia']);
+const TIPOS_CON_DATOS = new Set(['importe_no_respaldado', 'precios_sin_vigencia', 'falta_vigencia', 'compra_especial_sin_aclarar']);
 
 // El respaldo depende del motivo: si el problema son los precios o la vigencia, se muestran los datos del catálogo para que
 // la usuaria redacte; si el problema es de marca (promesas, características, código de campaña), no se vuelca ninguna lista.

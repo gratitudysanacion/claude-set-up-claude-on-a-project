@@ -8,7 +8,7 @@ const os = require('node:os');
 const path = require('node:path');
 const zlib = require('node:zlib');
 const { spawnSync } = require('node:child_process');
-const { leerLibro, leerZip, convertir, ErrorXlsx } = require('../scripts/xlsx-a-consolidado');
+const { leerLibro, leerZip, convertir, aplicarCorrecciones, ErrorXlsx } = require('../scripts/xlsx-a-consolidado');
 
 // ---- Escritor mínimo de .xlsx ----
 function crc32(buf) {
@@ -244,5 +244,65 @@ test('xlsx -> consolidado -> cargar-campana (ensayo): la cadena completa funcion
     assert.equal(carga.status, 0, carga.stdout + carga.stderr);
     assert.match(carga.stdout, /Productos en el origen: 5/);
     assert.deepEqual(fs.readdirSync(datos), []); // ensayo: no escribe nada
+  } finally { fs.rmSync(dir, { recursive: true, force: true }); }
+});
+
+// ---- Correcciones manuales (--correcciones) ----
+test('correcciones: corrige campos admitidos por id, omite filas y cuenta lo hecho, sin tocar el resto', () => {
+  const libro = aLibro(hojasEjemplo());
+  const sin = convertir(libro).datos.productos;
+  const { datos, resumen } = convertir(libro, { correcciones: {
+    p5104: { precio_oferta: null, promocion: 'Solo se vende dentro del Set (cód. 5013 y 4683, $55.000 el set); no se vende por separado' },
+    p723: { precio_normal: 65000 }
+  } });
+  const por = id => datos.productos.find(p => p.id === id);
+  assert.equal(por('p5104').precio_oferta, null);
+  assert.match(por('p5104').promocion, /^Solo se vende dentro del Set/);
+  assert.equal(por('p723').precio_normal, 65000);
+  assert.equal(por('p723').aviso_revision, 'Verificado | NUEVO'); // campos no corregidos se conservan
+  assert.equal(por('p670').precio_oferta, 48500);
+  assert.equal(resumen.corregidos, 2);
+  assert.equal(resumen.omitidos, 0);
+  assert.equal(resumen.total, sin.length);
+  const omitido = convertir(libro, { correcciones: { p670: { omitir: true } } });
+  assert.equal(omitido.resumen.omitidos, 1);
+  assert.equal(omitido.resumen.total, sin.length - 1);
+  assert.ok(!omitido.datos.productos.some(p => p.id === 'p670'));
+  // la lista original no se modifica
+  const lista = [{ id: 'a', nombre: 'A', precio_normal: 1, precio_oferta: 1, promocion: 'x' }];
+  aplicarCorrecciones(lista, { a: { promocion: 'y' } });
+  assert.equal(lista[0].promocion, 'x');
+});
+
+test('correcciones: un id inexistente, un campo no admitido o un valor inválido abortan sin escribir nada', () => {
+  const libro = aLibro(hojasEjemplo());
+  const falla = (c, re) => assert.throws(() => convertir(libro, { correcciones: c }), e => e instanceof ErrorXlsx && re.test(e.message));
+  falla({ p9999: { promocion: 'x' } }, /id p9999 no existe/);
+  falla({ p670: { referencia: '1' } }, /campo "referencia" no se puede corregir/);
+  falla({ p670: { estado: 'confirmado' } }, /campo "estado" no se puede corregir/);
+  falla({ p670: { precio_oferta: -5 } }, /precio_oferta debe ser null o un entero/);
+  falla({ p670: { precio_oferta: '3000' } }, /precio_oferta debe ser null o un entero/);
+  falla({ p670: { promocion: '  ' } }, /promocion debe ser un texto no vac/);
+  falla({ p670: { omitir: false } }, /"omitir" solo admite true/);
+  falla({ p670: { omitir: true, promocion: 'x' } }, /no se combina/);
+  falla([], /debe ser un objeto/);
+});
+
+test('correcciones por línea de comandos: --correcciones lee el JSON y el resumen solo imprime conteos', () => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'corr-'));
+  try {
+    const x = path.join(dir, 'a.xlsx'); fs.writeFileSync(x, xlsx(hojasEjemplo()));
+    const c = path.join(dir, 'c.json'); fs.writeFileSync(c, JSON.stringify({ p670: { omitir: true } }));
+    const salida = path.join(dir, 'o.json');
+    const script = path.join(__dirname, '..', 'scripts', 'xlsx-a-consolidado.js');
+    const r = spawnSync(process.execPath, [script, '--origen', x, '--destino', salida, '--correcciones', c], { encoding: 'utf8' });
+    assert.equal(r.status, 0, r.stderr);
+    assert.match(r.stdout, /correcciones aplicadas: 0 · filas omitidas: 1/);
+    assert.ok(!/Biomilk|48\.500/.test(r.stdout));
+    assert.ok(!JSON.parse(fs.readFileSync(salida, 'utf8')).productos.some(p => p.id === 'p670'));
+    fs.writeFileSync(c, '{no es json');
+    const mal = spawnSync(process.execPath, [script, '--origen', x, '--destino', path.join(dir, 'o2.json'), '--correcciones', c], { encoding: 'utf8' });
+    assert.notEqual(mal.status, 0);
+    assert.ok(!fs.existsSync(path.join(dir, 'o2.json')));
   } finally { fs.rmSync(dir, { recursive: true, force: true }); }
 });

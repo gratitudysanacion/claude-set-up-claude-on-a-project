@@ -103,6 +103,15 @@ Comprobar en el navegador que el banner diga la campaña nueva con sus fechas y 
 | A verificar | 5104 a $28.000 dentro de un set (pág. 66) y 43891 a $24.000 dentro de un set (pág. 113); compra especial 60099, 60100, 60121 y 60124 |
 | Auditoría final del ensayo | `promocion_no_coincide: 0` tras corregir la regla de sets |
 
+## 6b. Correcciones manuales y compra especial (Entrega 14, 2 nov 2026)
+
+| Elemento | Detalle |
+|---|---|
+| `--correcciones ARCHIVO.json` en `xlsx-a-consolidado.js` | Corrige por id (p. ej. `p5104`) los campos `nombre`, `presentacion`, `precio_normal`, `precio_oferta`, `promocion`, o la fila completa con `{"omitir": true}`. Un id inexistente, un campo no admitido o un valor inválido **abortan sin escribir nada**. Solo imprime conteos |
+| Archivo del C12 | `deploy/c12-correcciones.json`: 5104 y 43891 se venden solo dentro de su set (sin precio propio; el texto trae el precio del set), se omite el duplicado `p43891_2`, y 60099, 60100 y 60124 quedan como "Compra especial" con su condición de compra |
+| Categoría de auditoría `compras_especiales` | Las compras especiales no cuentan como datos faltantes |
+| Pendiente | El 60121 (precio $3.000) sigue sin la condición de compra: la usuaria debe confirmarla antes de cargar |
+
 ## 7. Riesgos y lecciones
 
 | Riesgo | Mitigación |

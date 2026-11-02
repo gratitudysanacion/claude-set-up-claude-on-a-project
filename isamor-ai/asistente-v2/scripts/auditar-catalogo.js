@@ -16,6 +16,7 @@ function auditar(productos, campana, hoy) {
     dos_por_uno_sin_deducir: prep.filter(p => p.tipo_promocion === '2x1' && !p.precio_normal_deducido),
     solo_oferta: prep.filter(p => p.precio_normal === null && p.precio_oferta !== null),
     obsequios: prep.filter(p => p.tipo_promocion === 'obsequio'),
+    compras_especiales: prep.filter(p => p.tipo_promocion === 'compra_especial'),
     sin_ningun_precio: prep.filter(p => p.precio_normal === null && p.precio_oferta === null && !p.precio_normal_deducido && p.tipo_promocion !== 'obsequio'),
     promocion_no_coincide: prep.filter(p => p.coherencia === 'inconsistente'),
     solo_dentro_de_set: prep.filter(p => p.advertencias.some(a => /solo dentro de un set/.test(a)))

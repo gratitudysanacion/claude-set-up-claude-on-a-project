@@ -11,6 +11,8 @@ const RE_SET_SIN_MARCADOR = /^\s*set\b/i;
 const RE_NOTA_IMPORTACION = /\s*\|\s*Se informa precio[\s\S]*$/i;
 const RE_DOS_POR_UNO = /\b2\s*x\s*1\s+por\s+(\$\s?(?:\d{1,3}(?:\.\d{3})+|\d+)(?:,\d+)?)/i;
 const RE_OBSEQUIO = /^\s*obsequio\b/i;
+const RE_COMPRA_ESPECIAL = /^\s*compra\s+especial\b/i;
+const AVISO_COMPRA_ESPECIAL = 'Compra especial: su precio solo aplica con la compra indicada en el catálogo; no se vende suelto.';
 const DIAS_AVISO_CIERRE = 3;
 
 function esNumero(v) {
@@ -152,8 +154,13 @@ function prepararProducto(p, campana, hoy) {
   const esObsequio = precioNormal === null && precioOferta === null && RE_OBSEQUIO.test(promocion);
 
   if (!p.estado || p.estado === 'pendiente_revision') advertencias.push('Dato pendiente de revisión.');
-  if (precioNormal === null && !esObsequio) advertencias.push('No tengo el precio normal de este producto.');
+  // Regla de negocio (confirmada por la usuaria, 2 nov): "Compra especial" = artículo con precio de oferta y sin precio normal
+  // que solo se adquiere con la compra de otro producto; nunca se vende suelto.
+  const esCompraEspecial = !esObsequio && !normalDeducido && precioNormal === null && precioOferta !== null && RE_COMPRA_ESPECIAL.test(promocion);
+
+  if (precioNormal === null && !esObsequio && !esCompraEspecial) advertencias.push('No tengo el precio normal de este producto.');
   if (precioOferta === null && !normalDeducido && !esObsequio) advertencias.push('No tiene oferta registrada.');
+  if (esCompraEspecial) advertencias.push(AVISO_COMPRA_ESPECIAL);
   if (esObsequio) advertencias.push('Obsequio: se entrega gratis con la compra indicada en el catálogo; no se vende por separado.');
   if (normalDeducido) advertencias.push('Promoción 2 x 1: el precio del catálogo es el de 1 unidad y, al comprar 1, recibe 2.');
   if (oferta.estado === 'vencida') advertencias.push('La oferta está vencida: no la presentes como vigente.');
@@ -176,10 +183,11 @@ function prepararProducto(p, campana, hoy) {
     pagina_origen: p.pagina_origen || null,
     precio_normal: precioNormal,
     precio_oferta: precioOferta,
-    tipo_promocion: dosPorUno !== null ? '2x1' : (esObsequio ? 'obsequio' : null),
+    tipo_promocion: dosPorUno !== null ? '2x1' : (esObsequio ? 'obsequio' : (esCompraEspecial ? 'compra_especial' : null)),
     resumen_oferta: normalDeducido
       ? 'Oferta 2 x 1: pides 1 y recibes 2 por el precio normal.'
-      : (esObsequio ? 'Obsequio: se entrega gratis con la compra indicada; no se vende por separado.' : null),
+      : (esObsequio ? 'Obsequio: se entrega gratis con la compra indicada; no se vende por separado.'
+        : (esCompraEspecial ? 'Compra especial: este precio solo aplica con la compra indicada en la promoción; no se vende suelto.' : null)),
     precio_normal_deducido: normalDeducido,
     promocion: promocion || null,
     oferta,
@@ -191,5 +199,5 @@ function prepararProducto(p, campana, hoy) {
 
 module.exports = {
   parseImporte, fechaColombia, diasEntre, extraerImportes, analizarPromocion,
-  estadoCampana, estadoOferta, prepararProducto, precioValido, limpiarPromocion, importeDosPorUno, DIAS_AVISO_CIERRE
+  estadoCampana, estadoOferta, prepararProducto, precioValido, limpiarPromocion, importeDosPorUno, AVISO_COMPRA_ESPECIAL, DIAS_AVISO_CIERRE
 };

@@ -3,7 +3,7 @@
 // El modelo solo accede al catálogo mediante dos herramientas de lectura; todo importe de su respuesta
 // se verifica contra lo que devolvieron esas herramientas y, si falla, se entrega la ficha determinística.
 // El motor (bucle de herramientas, topes, cliente HTTP) vive en agente.js y lo comparten todos los módulos.
-const { verificarRespuesta } = require('./verificador');
+const { verificarRespuesta, verificarCompraEspecial, CORRECCION_COMPRA_ESPECIAL } = require('./verificador');
 const { fichaDeterminista, advertenciasDe } = require('./respaldo');
 const { crearAgente, crearClienteHttp, aTextoPlano, MODELO_POR_DEFECTO } = require('./agente');
 
@@ -20,6 +20,7 @@ REGLAS DE DATOS (obligatorias)
 - Muestra por separado precio normal, precio de oferta y vigencia. Escribe los importes como $48.500.
 - Muestra el texto de la promoción tal cual viene; no lo reinterpretes. Menciona la página del catálogo cuando exista.
 - Si un producto trae tipo_promocion "2x1": su precio_normal es el precio de 1 unidad y la oferta es que, al comprar 1, recibe 2. Preséntalo así, con el texto de la promoción tal cual, y NO calcules ni menciones un precio por unidad.
+- Si un producto trae tipo_promocion "compra_especial": es un artículo con precio propio que solo se adquiere con la compra del producto que indica el texto de la promoción y NO se vende suelto. SIEMPRE que digas su precio aclara, en la misma respuesta, que solo aplica con la compra de un producto (el de la promoción) y que no se vende suelto. No lo llames "precio normal" ni digas "no tengo el precio normal".
 - Si un producto trae resumen_oferta, úsalo como la línea de oferta. Para un 2x1 u obsequio, nunca escribas "no tengo ese dato" ni "no tiene oferta" sobre el precio de oferta: su oferta es justamente ese resumen.
 - Si hay tres o más productos posibles, sé breve: una línea por producto con nombre, referencia, página y precios, y escribe la vigencia una sola vez al final. Pide precisar cuál necesita.
 - Si un producto trae tipo_promocion "obsequio": es un regalo que se entrega gratis con la compra indicada en el texto de la promoción. No tiene precio porque no se vende. Dilo así y no digas "no tengo ese dato" sobre su precio. No prometas existencias del obsequio.
@@ -110,13 +111,22 @@ function ejecutarHerramienta(catalogo, nombre, entrada) {
   return { error: 'herramienta_desconocida' };
 }
 
+// Importes respaldados por el catálogo + aclaración obligatoria de la "compra especial".
+function verificarComercial(texto, resultados) {
+  const importes = verificarRespuesta(texto, resultados);
+  if (!importes.ok) return { ...importes, motivo: 'importe_no_respaldado' };
+  const ce = verificarCompraEspecial(texto, resultados);
+  if (!ce.ok) return { ok: false, violaciones: ce.faltan, motivo: 'compra_especial_sin_aclarar', correccion: CORRECCION_COMPRA_ESPECIAL + ' Vuelve a escribir la respuesta completa.' };
+  return { ...importes, motivo: null };
+}
+
 // Asistente comercial = agente genérico + herramientas del catálogo + verificador de importes + ficha de respaldo.
 function crearResponder({ catalogo, ...opciones } = {}) {
   return crearAgente({
     sistema: SISTEMA,
     herramientas: HERRAMIENTAS,
     ejecutar: (nombre, entrada) => ejecutarHerramienta(catalogo, nombre, entrada),
-    verificar: (texto, resultados) => ({ ...verificarRespuesta(texto, resultados), motivo: 'importe_no_respaldado' }),
+    verificar: verificarComercial,
     respaldo: resultados => fichaDeterminista(resultados),
     advertencias: advertenciasDe,
     maxTokens: 2500, // el razonamiento interno del modelo también cuenta contra este tope

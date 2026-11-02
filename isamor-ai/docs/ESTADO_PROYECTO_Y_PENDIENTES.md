@@ -44,7 +44,7 @@
 | Nginx | 3 sitios publicados, HTTPS con redirección | 80 / 443 |
 | Firewall UFW | Activo: solo 80, 443 y SSH | |
 | Acceso SSH | Solo llave (con passphrase). Contraseña desactivada. `root` solo con llave. Rescate: terminal del navegador de hPanel | 22 |
-| fail2ban | Activo, jail `sshd` (5 fallos en 10 min, bloqueo 1 h). Lista blanca: `127.0.0.1/8`, `::1`, `169.254.0.0/16` (hPanel) | |
+| fail2ban | Activo, jail `sshd` (5 fallos en 10 min, bloqueo 1 h). Lista blanca: `127.0.0.1/8`, `::1`, `[IP-REDACTADA]/16` (hPanel) | |
 | Certificados | Válidos hasta enero 2027, renovación automática activa | |
 
 **Catálogo:** 437 registros importados (396 Válido, 31 Doble, 10 No informado), todos pendientes de revisión. "Válido" no significa precio ni referencia verificados. La importación masiva sigue pausada por decisión de la usuaria.
@@ -141,14 +141,14 @@ Nota: la contraseña admin existe en dos lugares (`.env` y volcado de PM2). Si s
 
 | Paso | Qué se hizo | Verificación |
 |---|---|---|
-| 1. fail2ban | Instalado (1.0.2). Jail `sshd`: 5 fallos en 10 min, bloqueo 1 h. Lista blanca `127.0.0.1/8`, `::1`, `169.254.0.0/16`. Archivo `/etc/fail2ban/jail.d/sshd-local.conf` | Servicio activo y habilitado; valores efectivos 3600 / 600 / 5; el filtro detecta 780 líneas de intentos fallidos en el journal; las 3 apps siguen online |
-| 2. Llave SSH | Llave ed25519 con passphrase creada en el computador de la usuaria. La pública se instaló en `/root/.ssh/authorized_keys_cris` (huella `SHA256:[huella-redactada]`, comentario `cris-isamor-2026`). Archivo separado porque Hostinger reescribe `authorized_keys` | Conexión por llave desde el PC: `CONEXION_POR_LLAVE_OK` |
+| 1. fail2ban | Instalado (1.0.2). Jail `sshd`: 5 fallos en 10 min, bloqueo 1 h. Lista blanca `127.0.0.1/8`, `::1`, `[IP-REDACTADA]/16`. Archivo `/etc/fail2ban/jail.d/sshd-local.conf` | Servicio activo y habilitado; valores efectivos 3600 / 600 / 5; el filtro detecta 780 líneas de intentos fallidos en el journal; las 3 apps siguen online |
+| 2. Llave SSH | Llave ed25519 con passphrase creada en el computador de la usuaria. La pública se instaló en `/root/.ssh/authorized_keys_cris` (huella `SHA256:v9sYD0VugVn177abqi9Ey4fFsqDdFoQ8UuxxahfdDr0`, comentario `cris-isamor-2026`). Archivo separado porque Hostinger reescribe `authorized_keys` | Conexión por llave desde el PC: `CONEXION_POR_LLAVE_OK` |
 | 3. Contraseña SSH desactivada | `/etc/ssh/sshd_config.d/01-endurecimiento.conf` con `AuthorizedKeysFile .ssh/authorized_keys .ssh/authorized_keys_cris`, `PasswordAuthentication no`, `PermitRootLogin prohibit-password`. Se lee antes que `50-cloud-init.conf` (en SSH vale el primer valor) | Prueba A: la llave entra. Prueba B: la contraseña se rechaza sin pedirla (`Permission denied (publickey)`). Prueba C: la terminal de hPanel abre sesiones nuevas |
 
 **Hallazgos de la ejecución:**
 - **Hostinger reescribe `authorized_keys` en cada sesión de la terminal del navegador** (escribe ~777 bytes al abrirla y lo vacía en ~1 minuto). Consecuencia: las llaves propias van en otro archivo, y `.ssh/authorized_keys` **debe mantenerse** en `AuthorizedKeysFile` o se rompe el acceso de rescate.
-- IP confirmadas como de la usuaria: `[IP-REDACTADA]` y `[IP-REDACTADA]` (cambio de IP de su conexión). `169.254.0.1` es la terminal de hPanel. **No hubo incidente de acceso.**
-- Dos llaves erróneas, **ninguna activa nunca**: (a) un par generado por error en el servidor (huella `SHA256:[huella-redactada]`), eliminado y verificado; (b) una llave pública sin comentario (huella `SHA256:[huella-redactada]`) pegada por error desde el portapapeles, de origen no determinado y sobrescrita antes de habilitar el archivo.
+- IP confirmadas como de la usuaria: `[IP-REDACTADA]` y `[IP-REDACTADA]` (cambio de IP de su conexión). `[IP-REDACTADA]` es la terminal de hPanel. **No hubo incidente de acceso.**
+- Dos llaves erróneas, **ninguna activa nunca**: (a) un par generado por error en el servidor (huella `SHA256:46kHWk...`), eliminado y verificado; (b) una llave pública sin comentario (huella `SHA256:sTvkG6KRT5...`) pegada por error desde el portapapeles, de origen no determinado y sobrescrita antes de habilitar el archivo.
 - fail2ban arranca solo al instalarse, antes de existir el archivo propio, y `systemctl enable --now` no recarga un servicio ya activo: hizo falta `fail2ban-client reload` y comprobar los valores efectivos.
 - Se creó `/root/.ssh/known_hosts` por una prueba hecha por error desde el servidor hacia sí mismo (inofensivo).
 - El banner del servidor informa **60 actualizaciones pendientes**, 4 de seguridad ESM Apps, 1 actualización no instalada automáticamente (ver `/var/log/unattended-upgrades/unattended-upgrades.log`) y la versión Ubuntu 26.04.1 disponible. **No actualizar a 26.04.**
@@ -490,7 +490,7 @@ Propuesta de la usuaria ("¿es posible crear en la página un módulo para crear
 | Dato | Valor |
 |---|---|
 | Repositorio / rama | `gratitudysanacion/claude-set-up-claude-on-a-project`, rama `claude/gracious-ptolemy-qm2mvv`, carpeta `isamor-ai/` (76 archivos) |
-| Cuenta | Conexión con GitHub con la cuenta `gratitudysanacion` (correo [correo-redactado]) |
+| Cuenta | Conexión con GitHub con la cuenta `gratitudysanacion` (correo gratitudysanacion@gmail.com) |
 | Commit | `f93308f` (2 nov). **Sin Pull Request**, por decisión de la usuaria |
 | Incidente | El envío falló con 403 ("GitHub authentication required" y luego "Claude doesn't have GitHub access…") hasta instalar la app de Claude en esa cuenta para el repositorio. Reintentar no sirve; la solución fue de permisos |
 | Contenido | Código, 225 pruebas, scripts de despliegue, pruebas de navegador, panel (referencia), v1 original y documentos. **Sin secretos**; en la copia del repositorio se redactan IP, huellas de llaves, nombre completo y correo |
@@ -530,3 +530,15 @@ Los comandos de reversión se dan siempre en un mensaje aparte (regla 8).
 | `data/usuarios.json.anterior` (copia automática de la versión previa en cada cambio de usuarios) | Es parte del diseño; no borrar |
 
 El panel, Gratitud, Nginx, UFW y el cron de respaldo **no se tocaron** en esta etapa.
+
+## 15. Avance del 2 de noviembre de 2026 (tarde): Entrega 14
+
+| Tema | Estado |
+|---|---|
+| Decisiones de la usuaria sobre el C12 | Páginas 26 y 56: precios correctos (las 14 filas "Revisar" se aprueban con `--aprobar`). 5104 y 43891 solo se venden dentro de su set. 60099/60100 (Kids/Baby) y 60124 (3 jabones Eau Vitale): **compra especial**. 60121: condición de compra aún sin confirmar |
+| Regla "compra especial" | Implementada: tipo de promoción propio, sin "falta el precio normal", aclaración obligatoria ("solo aplica con la compra de un producto; no se vende suelto") en el asistente comercial (verificador + ficha de respaldo) y en el Estudio de contenido (nueva violación `compra_especial_sin_aclarar`) |
+| Conversor | `--correcciones` (ver `GUIA_CARGA_CAMPANA.md`, sección 6b) |
+| Pruebas | 236 automáticas (Node 18 y 22), 9 de 9 mutaciones detectadas, ensayo de actualización de producción 19/19 |
+| Resultado sobre el Excel real | 451 productos tras correcciones (6 filas tocadas), 3 compras especiales, 22 promociones 2 x 1, 11 obsequios, 2 sets sin precio propio |
+| Siguiente | Instalar la Entrega 14 en pruebas (`autorizo entrega 14`), confirmar el 60121, convertir y programar el C12 para el 7 nov, y actualizar producción (`autorizo actualizar`; `server.js` no cambió: la huella esperada sigue siendo `21f6d973…`) |
+

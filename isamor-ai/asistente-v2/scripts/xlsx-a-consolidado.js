@@ -6,7 +6,10 @@
 //  - Rechaza filas "Revisar" (precios o códigos que el artefacto no pudo comprobar). Se pueden aprobar SOLO las que tú nombres,
 //    una vez comprobadas contra el PDF: --aprobar 2219,2210,... (cualquier otra fila "Revisar" sigue bloqueando).
 //  - No imprime nombres ni precios: solo conteos y códigos de las filas con problemas.
-// Uso:  node scripts/xlsx-a-consolidado.js --origen ARCHIVO.xlsx --destino SALIDA.json [--esperados N] [--aprobar COD1,COD2,...] [--permitir-revisar] [--sobrescribir]
+//  - --correcciones ARCHIVO.json: correcciones manuales ya comprobadas contra el PDF, por id (p. ej. "p5104"). Formato:
+//      { "p5104": { "precio_oferta": null, "promocion": "texto" }, "p43891_2": { "omitir": true } }
+//    Campos admitidos: nombre, presentacion, precio_normal, precio_oferta, promocion. Un id inexistente o un campo no admitido aborta.
+// Uso:  node scripts/xlsx-a-consolidado.js --origen ARCHIVO.xlsx --destino SALIDA.json [--esperados N] [--aprobar COD1,COD2,...] [--correcciones ARCHIVO.json] [--permitir-revisar] [--sobrescribir]
 const fs = require('node:fs');
 const zlib = require('node:zlib');
 
@@ -132,7 +135,40 @@ function indicarColumnas(hoja, requeridas, nombreHoja) {
   return idx;
 }
 
-function convertir(hojas, { permitirRevisar = false, aprobar = [] } = {}) {
+const CAMPOS_CORREGIBLES = new Set(['nombre', 'presentacion', 'precio_normal', 'precio_oferta', 'promocion']);
+
+// Aplica correcciones manuales por id. Devuelve { productos, corregidos, omitidos }; no modifica la lista de entrada.
+function aplicarCorrecciones(productos, correcciones) {
+  if (correcciones === undefined || correcciones === null) return { productos, corregidos: 0, omitidos: 0 };
+  if (typeof correcciones !== 'object' || Array.isArray(correcciones)) throw new ErrorXlsx('El archivo de correcciones debe ser un objeto { "id": { ... } }.');
+  const ids = new Set(productos.map(p => p.id));
+  const errores = [];
+  for (const [id, c] of Object.entries(correcciones)) {
+    if (!ids.has(id)) { errores.push(`el id ${id} no existe en el Excel`); continue; }
+    if (!c || typeof c !== 'object' || Array.isArray(c)) { errores.push(`${id}: la corrección debe ser un objeto`); continue; }
+    for (const [campo, valor] of Object.entries(c)) {
+      if (campo === 'omitir') { if (valor !== true) errores.push(`${id}: "omitir" solo admite true`); continue; }
+      if (!CAMPOS_CORREGIBLES.has(campo)) { errores.push(`${id}: el campo "${campo}" no se puede corregir`); continue; }
+      if (campo === 'precio_normal' || campo === 'precio_oferta') {
+        if (valor !== null && !(Number.isInteger(valor) && valor >= 0)) errores.push(`${id}: ${campo} debe ser null o un entero >= 0`);
+      } else if (typeof valor !== 'string' || !valor.trim()) errores.push(`${id}: ${campo} debe ser un texto no vacío`);
+    }
+    if (c.omitir === true && Object.keys(c).length > 1) errores.push(`${id}: "omitir" no se combina con otros campos`);
+  }
+  if (errores.length) throw new ErrorXlsx(`Correcciones no válidas:\n  - ${errores.join('\n  - ')}`);
+  let corregidos = 0, omitidos = 0;
+  const salida = [];
+  for (const p of productos) {
+    const c = correcciones[p.id];
+    if (!c) { salida.push(p); continue; }
+    if (c.omitir === true) { omitidos++; continue; }
+    corregidos++;
+    salida.push({ ...p, ...c, aviso_revision: p.aviso_revision, notas: p.notas });
+  }
+  return { productos: salida, corregidos, omitidos };
+}
+
+function convertir(hojas, { permitirRevisar = false, aprobar = [], correcciones } = {}) {
   const aprobados = new Set(aprobar.map(c => String(c).trim()).filter(Boolean));
   const hp = hojas.Productos, hs = hojas['Sin precio'];
   if (!hp) throw new ErrorXlsx('Falta la hoja "Productos".');
@@ -211,7 +247,9 @@ function convertir(hojas, { permitirRevisar = false, aprobar = [] } = {}) {
     throw new ErrorXlsx(`Hay ${bloqueantes.length} fila(s) en estado "Revisar" sin aprobar (códigos: ${bloqueantes.slice(0, 15).join(', ')}${bloqueantes.length > 15 ? ', …' : ''}). Compruébalas contra el PDF y apruébalas con --aprobar CODIGOS, o corrígelas en el artefacto y vuelve a descargar el Excel.`);
   }
   if (problemas.length) throw new ErrorXlsx(`Se encontraron ${problemas.length} problema(s):\n  - ${problemas.slice(0, 20).join('\n  - ')}${problemas.length > 20 ? '\n  - …' : ''}`);
-  return { datos: { version: 1, moneda: 'COP', productos, historial: [] }, resumen: { total: productos.length, ...resumen } };
+  const corr = aplicarCorrecciones(productos, correcciones);
+  if (!corr.productos.length) throw new ErrorXlsx('Tras aplicar las correcciones no queda ningún producto.');
+  return { datos: { version: 1, moneda: 'COP', productos: corr.productos, historial: [] }, resumen: { total: corr.productos.length, ...resumen, corregidos: corr.corregidos, omitidos: corr.omitidos } };
 }
 
 // ---------- Línea de comandos ----------
@@ -222,7 +260,12 @@ function principal() {
   if (!origen || !destino) throw new ErrorXlsx('Uso: node scripts/xlsx-a-consolidado.js --origen ARCHIVO.xlsx --destino SALIDA.json [--esperados N] [--permitir-revisar] [--sobrescribir]');
   if (fs.existsSync(destino) && !a.includes('--sobrescribir')) throw new ErrorXlsx(`${destino} ya existe. Elige otro nombre o usa --sobrescribir.`);
   const lista = arg('--aprobar');
-  const { datos, resumen } = convertir(leerLibro(origen), { permitirRevisar: a.includes('--permitir-revisar'), aprobar: lista ? lista.split(',') : [] });
+  const rutaCorr = arg('--correcciones');
+  let correcciones;
+  if (rutaCorr) {
+    try { correcciones = JSON.parse(fs.readFileSync(rutaCorr, 'utf8')); } catch (e) { throw new ErrorXlsx(`No se pudo leer ${rutaCorr} como JSON (${e.code || e.name}).`); }
+  }
+  const { datos, resumen } = convertir(leerLibro(origen), { permitirRevisar: a.includes('--permitir-revisar'), aprobar: lista ? lista.split(',') : [], correcciones });
   const esperados = arg('--esperados');
   if (esperados !== undefined && Number(esperados) !== resumen.total) {
     throw new ErrorXlsx(`Se esperaban ${esperados} productos y el Excel trae ${resumen.total}. No se escribió nada.`);
@@ -232,6 +275,7 @@ function principal() {
   fs.renameSync(temporal, destino);
   console.log(`Convertido: ${resumen.total} productos (${resumen.con_precio} con precio, ${resumen.sin_precio} sin precio).`);
   console.log(`  2 x 1 aparentes: ${resumen.dos_por_uno_aparente} · códigos repetidos: ${resumen.repetidos} · filas "Revisar" admitidas: ${resumen.revisar} · parciales ya incluidos: ${resumen.parciales_omitidos}`);
+  if (rutaCorr) console.log(`  correcciones aplicadas: ${resumen.corregidos} · filas omitidas: ${resumen.omitidos}`);
   console.log(`Escrito en ${destino}. No se tocó ningún otro archivo.`);
 }
 
@@ -239,4 +283,4 @@ if (require.main === module) {
   try { principal(); } catch (e) { console.error(e instanceof ErrorXlsx ? e.message : `Error inesperado (${e.code || e.name}).`); process.exit(1); }
 }
 
-module.exports = { leerLibro, leerZip, convertir, ErrorXlsx };
+module.exports = { leerLibro, leerZip, convertir, aplicarCorrecciones, ErrorXlsx };

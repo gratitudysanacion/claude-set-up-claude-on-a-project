@@ -2,6 +2,7 @@
 // Respuesta determinística ("ficha") sin IA: se usa cuando el modelo falla o el verificador rechaza su texto.
 // Solo escribe datos que vienen de las herramientas del catálogo; no redacta nada propio sobre precios.
 const MAX_FICHAS = 5;
+const AVISO_CE = 'solo aplica con la compra indicada en el catálogo; no se vende suelto';
 
 function pesos(valor) {
   // Formato manual (no depende de ICU): 48500 -> $48.500
@@ -27,13 +28,17 @@ function lineaVigencia(oferta) {
 function fichaProducto(p) {
   const vencida = p.oferta && p.oferta.estado === 'vencida';
   const lineas = [`${p.nombre}${p.referencia ? ` (ref. ${p.referencia})` : ''}${p.presentacion ? ` · ${p.presentacion}` : ''}`];
-  if (p.tipo_promocion === 'obsequio') {
+  if (p.tipo_promocion === 'compra_especial') {
+    // el precio y la aclaración van en una sola línea (abajo)
+  } else if (p.tipo_promocion === 'obsequio') {
     lineas.push('  Obsequio: se entrega gratis con la compra indicada en el catálogo (no se vende por separado)');
   } else {
     lineas.push(`  Precio normal: ${p.precio_normal !== null ? pesos(p.precio_normal) : 'no tengo ese dato'}`);
   }
   if (p.tipo_promocion === 'obsequio') {
     // sin línea de precio de oferta: no aplica
+  } else if (p.tipo_promocion === 'compra_especial') {
+    lineas.push(`  Precio: ${pesos(p.precio_oferta)}${vencida ? ' (VENCIDO, solo de referencia)' : ''} — ${AVISO_CE}`);
   } else if (p.tipo_promocion === '2x1' && p.precio_oferta === null) {
     lineas.push(`  Oferta: 2 x 1 (pides 1 y recibes 2)${vencida ? ' (VENCIDA, solo de referencia)' : ''}`);
   } else {
@@ -88,6 +93,7 @@ function advertenciasDe(resultados, texto) {
     const t = texto.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
     for (const a of [...salida]) {
       if (a.startsWith('Promoción 2 x 1') && !/2\s*x\s*1|dos\s+por\s+uno|pides\s+1/.test(t)) salida.delete(a);
+      if (a.startsWith('Compra especial:') && !/compra\s+especial|no se vende suelto|no se vende por separado|solo aplica|solo con la compra/.test(t)) salida.delete(a);
       if (a.startsWith('Obsequio:') && !/obsequio|regalo|gratis/.test(t)) salida.delete(a);
     }
   }

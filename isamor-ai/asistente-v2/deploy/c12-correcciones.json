@@ -1,8 +1,25 @@
 {
-  "p5104": { "precio_oferta": null, "promocion": "Solo se vende dentro del Set (cód. 5013 y 4683, $55.000 el set; precio normal $110.000); no se vende por separado" },
-  "p43891": { "precio_oferta": null, "promocion": "Solo se vende dentro del Set (cód. 677 y 628, $58.500 el set; precio normal $130.500); no se vende por separado" },
-  "p43891_2": { "omitir": true },
-  "p60124": { "promocion": "Compra especial; por la compra de 3 o más jabones (Jabón en Barra Eau Vitale con manteca de karité); caja cerrada, imagen referencial; no incluye jabones; material promocional limitado hasta agotar existencias" },
-  "p60099": { "promocion": "Compra especial; por la compra de productos de la línea Yanbal Kids" },
-  "p60100": { "promocion": "Compra especial; por la compra de productos de la línea Yanbal Baby" }
+  "p5104": {
+    "precio_oferta": null,
+    "promocion": "Solo se vende dentro del Set (cód. 5013 y 4683, $55.000 el set; precio normal $110.000); no se vende por separado"
+  },
+  "p43891": {
+    "precio_oferta": null,
+    "promocion": "Solo se vende dentro del Set (cód. 677 y 628, $58.500 el set; precio normal $130.500); no se vende por separado"
+  },
+  "p43891_2": {
+    "omitir": true
+  },
+  "p60124": {
+    "promocion": "Compra especial; por la compra de 3 o más jabones (Jabón en Barra Eau Vitale con manteca de karité); caja cerrada, imagen referencial; no incluye jabones; material promocional limitado hasta agotar existencias"
+  },
+  "p60099": {
+    "promocion": "Compra especial; por la compra de productos de la línea Yanbal Kids"
+  },
+  "p60100": {
+    "promocion": "Compra especial; por la compra de productos de la línea Yanbal Baby"
+  },
+  "p60121": {
+    "promocion": "Bolsa de Regalo; oferta $3.000; sin condición de compra; material promocional limitado hasta agotar existencias; el lazo es decorativo"
+  }
 }

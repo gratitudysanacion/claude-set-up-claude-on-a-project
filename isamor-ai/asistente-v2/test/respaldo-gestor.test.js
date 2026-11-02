@@ -237,3 +237,24 @@ test('verificarCopia: detecta una copia con páginas alteradas aunque se pueda a
     assert.ok(detectada >= 1, 'la comprobación de integridad debe rechazar la copia alterada');
   } finally { fs.rmSync(dir, { recursive: true, force: true }); }
 });
+
+test('restaurar: dos restauraciones en el mismo segundo guardan cada base anterior con un nombre distinto', conSqlite, () => {
+  const dir = carpeta();
+  try {
+    const llave = generarLlaveHex();
+    const { ruta, db } = baseConClientas(dir, llave, 2);
+    const rb = respaldar({ origen: ruta, destino: path.join(dir, 'r') });
+    db.close();
+    const copia = path.join(dir, 'r', rb.archivo);
+    const practica = path.join(dir, 'practica.db');
+    const ahora = () => new Date(Date.UTC(2026, 10, 2, 5, 11, 6));
+    const opciones = { copia, destino: practica, llaveHex: llave, aplicar: true, asistenteDetenido: true, ahora };
+    restaurar(opciones);                       // crea la base de práctica
+    const a = restaurar(opciones);             // guarda la anterior
+    const b = restaurar(opciones);             // mismo segundo: no debe fallar ni pisar
+    assert.notEqual(a.respaldo_actual, b.respaldo_actual);
+    assert.match(b.respaldo_actual, /-2$/);
+    assert.equal(fs.readdirSync(dir).filter(n => n.includes('antes-restauracion')).length, 2);
+    assert.equal(verificarCopia(practica).clientas, 2);
+  } finally { fs.rmSync(dir, { recursive: true, force: true }); }
+});

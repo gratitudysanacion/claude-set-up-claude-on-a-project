@@ -17,7 +17,7 @@ const { verificarCopia, ErrorRespaldo } = require('./respaldar-gestor');
 
 const MUESTRA = 5;
 const comillas = ruta => `'${String(ruta).replace(/'/g, "''")}'`;
-const sello = () => new Date().toISOString().replace(/[-:]/g, '').replace('T', '-').slice(0, 15);
+const sello = (fecha = new Date()) => fecha.toISOString().replace(/[-:]/g, '').replace('T', '-').slice(0, 15);
 
 // Descifra el teléfono de hasta MUESTRA clientas de la copia. Devuelve { probadas, fallidas }.
 function probarLlave(copia, llaveHex) {
@@ -34,7 +34,7 @@ function probarLlave(copia, llaveHex) {
   } finally { db.close(); }
 }
 
-function restaurar({ copia, destino, llaveHex, aplicar = false, asistenteDetenido = false }) {
+function restaurar({ copia, destino, llaveHex, aplicar = false, asistenteDetenido = false, ahora = () => new Date() }) {
   if (!fs.existsSync(copia)) throw new ErrorRespaldo('No existe la copia indicada.');
   const resultado = verificarCopia(copia);
   if (!llaveHex) throw new ErrorRespaldo('No hay GESTOR_LLAVE: sin la llave actual no se puede comprobar que la copia sea legible.');
@@ -47,7 +47,10 @@ function restaurar({ copia, destino, llaveHex, aplicar = false, asistenteDetenid
   const { DatabaseSync } = require('node:sqlite');
   let respaldoActual = null;
   if (plan.existe_actual) {
-    respaldoActual = `${destino}.antes-restauracion-${sello()}`;
+    // Nombre único: dos restauraciones en el mismo segundo no deben pisarse ni fallar (VACUUM INTO no sobrescribe).
+    const base = `${destino}.antes-restauracion-${sello(ahora())}`;
+    respaldoActual = base;
+    for (let n = 2; fs.existsSync(respaldoActual); n++) respaldoActual = `${base}-${n}`;
     const actual = new DatabaseSync(destino, { readOnly: true });
     try { actual.exec(`VACUUM INTO ${comillas(respaldoActual)}`); } finally { actual.close(); }
     fs.chmodSync(respaldoActual, 0o600);

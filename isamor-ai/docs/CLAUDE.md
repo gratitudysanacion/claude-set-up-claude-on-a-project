@@ -41,9 +41,9 @@ Cuatro módulos, en este orden en el menú lateral: 1 Asistente comercial, 2 Ase
   - `/root/respaldos-manuales/asistente-v1-20261102-015110` (v1 original) y `…/asistente-v2-antes-20261102-031746` (v2 previa a la administración de usuarios): respaldos completos con sus `.sha256`. `/root/produccion-v2/`, `/root/actualizacion-usuarios/` y `/root/paquetes-despliegue/` guardan los paquetes usados; no se borran sin autorización.
   - `/opt/node22/` → Node 22.22.0 (instalado con verificación de 3 huellas). `/root/descargas-node/` → su descarga.
   - `/root/c12-entrada/` → catálogo C12: `c12.pdf` (17,9 MB), `Catalogo_Yanbal_C12_2026_Precios.xlsx` (huella `e722e7de…901f593`) y scripts auxiliares.
-- **Acceso SSH (desde el 26 oct):** solo por llave ed25519 con passphrase (la privada vive en el PC de la usuaria, nunca se comparte ni se pega). Contraseña desactivada y `root` solo con llave. fail2ban activo (jail `sshd`, lista blanca `127.0.0.1/8`, `::1`, `[IP-REDACTADA]/16`).
+- **Acceso SSH (desde el 26 oct):** solo por llave ed25519 con passphrase (la privada vive en el PC de la usuaria, nunca se comparte ni se pega). Contraseña desactivada y `root` solo con llave. fail2ban activo (jail `sshd`, lista blanca `127.0.0.1/8`, `::1`, `169.254.0.0/16`).
   - Configuración propia en `/etc/ssh/sshd_config.d/01-endurecimiento.conf` (se lee antes que los de cloud-init; no editar esos). La llave de la usuaria está en `/root/.ssh/authorized_keys_cris`.
-  - **Acceso de rescate:** terminal del navegador de hPanel (entra desde `[IP-REDACTADA]`). **Hostinger reescribe `/root/.ssh/authorized_keys` en cada sesión de esa terminal**: no poner llaves propias ahí y **no quitarlo** de `AuthorizedKeysFile`.
+  - **Acceso de rescate:** terminal del navegador de hPanel (entra desde `169.254.0.1`). **Hostinger reescribe `/root/.ssh/authorized_keys` en cada sesión de esa terminal**: no poner llaves propias ahí y **no quitarlo** de `AuthorizedKeysFile`.
   - Ubuntu 26.04.1 aparece disponible: **no actualizar** (cambiaría Node, Nginx y Python).
 - La usuaria trabaja desde Windows. Desde el 30 oct usa **PowerShell** (`PS C:\Users\USUARIA>`; variable `$env:USERPROFILE`) y la terminal del navegador de hPanel (`root@srv1779034`). Túnel a pruebas: `ssh -N -o ServerAliveInterval=30 -o ServerAliveCountMax=3 -i "$env:USERPROFILE\.ssh\isamor_ed25519" -L 3082:127.0.0.1:3082 root@[IP-REDACTADA]` y abrir `http://localhost:3082`.
 - **Desde mi entorno (Claude) no se puede leer ni escribir en el servidor**: solo se ve lo que la usuaria pega. Los archivos del servidor se procesan con scripts que ella ejecuta allí; los adjuntos del chat (p. ej. el Excel del C12) sí llegan al entorno de Claude.
@@ -73,7 +73,7 @@ Cuatro módulos, en este orden en el menú lateral: 1 Asistente comercial, 2 Ase
 
 ## Código y GitHub
 - **Repositorio:** `gratitudysanacion/claude-set-up-claude-on-a-project`, rama **`claude/gracious-ptolemy-qm2mvv`**, carpeta **`isamor-ai/`** (el resto del repositorio es otro proyecto y no se toca). Primer envío: commit `f93308f` del 2 nov 2026. **Sin Pull Request** (decisión de la usuaria).
-- **Cuenta:** la conexión con GitHub es con la cuenta `gratitudysanacion` (correo gratitudysanacion@gmail.com). El envío falló varias veces con 403 hasta instalar la app de Claude en esa cuenta para ese repositorio (https://github.com/apps/claude/installations/select_target).
+- **Cuenta:** la conexión con GitHub es con la cuenta `gratitudysanacion` (correo [correo-redactado]). El envío falló varias veces con 403 hasta instalar la app de Claude en esa cuenta para ese repositorio (https://github.com/apps/claude/installations/select_target).
 - **Lo que se sube:** código, pruebas, scripts y documentos **sin secretos** (ni `.env`, usuarios, catálogos, bases de datos ni llaves). En la copia del repositorio se **redactan** las IP, las huellas de llaves, el nombre completo y el correo; las copias completas de los documentos las conserva la usuaria en su PC.
 - Pendiente: comprobar si el repositorio es privado (no se pudo verificar) y subir los cambios posteriores al 2 nov.
 

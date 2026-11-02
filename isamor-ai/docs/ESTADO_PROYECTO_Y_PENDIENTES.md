@@ -1,7 +1,7 @@
 # ISAMOR AI – Plataforma comercial Yanbal
 ## Estado del proyecto, trabajo ejecutado y pendientes
 
-**Fecha de corte:** 30 de octubre de 2026 (noche). Las secciones 1 a 10 conservan el detalle del 26 oct (seguridad de acceso); **la sección 11 resume el avance del 27 al 30 oct** (asistente v2, Estudio de contenido, Gestor de ventas, catálogo C12) y la sección 12 el registro de cambios en el servidor de esa etapa.
+**Fecha de corte:** 2 de noviembre de 2026. Las secciones 1 a 10 conservan el detalle del 26 oct (seguridad de acceso); la sección 11 resume el avance del 27 al 30 oct (asistente v2, Estudio de contenido, Gestor de ventas, catálogo C12) y la 12 el registro de cambios del servidor en esa etapa. **Las secciones 13 y 14 recogen el 1 y 2 de noviembre: despliegue a producción, administración de usuarios y código en GitHub.**
 **Servidor:** VPS Hostinger (Ubuntu 24.04), usuario root
 **Regla de seguridad del documento:** no contiene contraseñas, claves ni valores de variables de entorno.
 
@@ -10,7 +10,7 @@
 ## 1. Resumen ejecutivo
 
 - La infraestructura existe y funciona: 3 aplicaciones en producción (Gratitud y Sanación, Asistente Yanbal, Panel administrativo Yanbal), sin reinicios en los últimos 3 días.
-- **Actualización 30 oct:** en **producción** el asistente sigue siendo la versión original (solo interfaz). En el servidor de **pruebas** ya funcionan el Asistente comercial y el Estudio de contenido con IA conectada (207 pruebas automáticas aprobadas) y el motor del Gestor de ventas (base SQLite cifrada). El despliegue a producción está previsto para el **lunes 2 de noviembre**. Ver sección 11. (Lo escrito a continuación en esta sección describe la situación del 26 oct.)
+- **Actualización 2 nov:** el asistente v2 **ya está en producción** (ver sección 13). **Actualización 30 oct (histórica):** en **producción** el asistente seguía siendo la versión original (solo interfaz). En el servidor de **pruebas** ya funcionan el Asistente comercial y el Estudio de contenido con IA conectada (207 pruebas automáticas aprobadas) y el motor del Gestor de ventas (base SQLite cifrada). El despliegue a producción está previsto para el **lunes 2 de noviembre**. Ver sección 11. (Lo escrito a continuación en esta sección describe la situación del 26 oct.)
 - Los 4 módulos comerciales **eran solo interfaz el 26 oct**. No había IA conectada, el asistente no consultaba el catálogo y el Gestor de ventas no tenía almacenamiento.
 - Se ejecutó la auditoría de solo lectura de los puntos 1 a 3 y el punto 4 (seguridad) avanzó: **los pasos 1 a 4 están CERRADOS y verificados** (fail2ban, llave SSH, contraseña SSH desactivada, login del panel). Los cambios autorizados están en la sección 8.
 - **Riesgo principal anterior, CERRADO:** SSH ya solo acepta llave, `root` no puede entrar con contraseña y fail2ban está activo. Hubo 429 intentos fallidos en 7 días (427 desde una sola IP); no hubo accesos no autorizados. La usuaria confirmó que las IP de los accesos exitosos son suyas.
@@ -451,3 +451,82 @@ Los comandos de reversión se dan siempre en un mensaje aparte (regla 8).
 | `GESTOR_LLAVE` en el `.env` de pruebas | No borrarla mientras exista `gestor.db`: dejaría ilegibles los datos |
 
 Producción (`/opt/yanbal-assistant`), el panel, Gratitud, Nginx, UFW y el cron de respaldo **no se tocaron** en esta etapa.
+
+---
+
+## 13. Avance del 1 y 2 de noviembre de 2026
+
+### 13.1 Producción: el asistente v2 está en línea
+
+| Paso | Resultado |
+|---|---|
+| Paquete congelado | Código de la Entrega 12 (el que ya había pasado 207 pruebas en el servidor de pruebas), con `desplegar.sh` corregido para **no copiar la llave de cifrado del Gestor de pruebas** a producción (el `.env` de producción lleva solo la llave de IA) |
+| Ensayo previo | 23 de 23 comprobaciones en una réplica de producción con Node 18 (abortos ante v1 alterada, catálogo incompleto o falta de llave; instalación; reversión) |
+| D0 a D3 (2 nov) | v1 confirmada (`765f5dfe…` / `e60c694a…`); respaldo `/root/respaldos-manuales/asistente-v1-20261102-015110`; catálogo de 437 exportado desde el panel; usuario y `.env` copiados desde pruebas; reinicio; salud `"ai":"connected"`, `"productos":437`; PM2 guardado. `server.js` = `e90b7d83…` |
+| D4 | Módulos del usuario `admin` ajustados con `asignar-modulos.js` |
+| Servicios vecinos | `gratitud` y `yanbal-admin` no se tocaron: `online`, sin reinicios, 5 días de actividad continua |
+| Observación | El despliegue D2 se ejecutó **sin escribir antes la frase `autorizo desplegar`**; salió bien y estaba respaldado, pero se anotó la regla: la frase se pide siempre |
+
+### 13.2 Acceso: clave perdida y restablecimiento
+
+La usuaria no podía entrar a producción ("contraseña incorrecta"). El registro mostró cinco intentos con clave incorrecta (401) y luego un bloqueo (429): era una clave equivocada, no un fallo. Se restableció con `crear-usuario.js` y se devolvió el rol con `asignar-rol.js`, porque **el script antiguo reemplazaba el registro completo y borraba el rol** (corregido en el código nuevo). Los reinicios limpiaron el bloqueo. Al escribir los módulos en vez de pulsar Enter, `admin` quedó con `sales, content, beauty, manager`; es ajustable desde el módulo Usuarios.
+
+### 13.3 Administración de usuarios (Entrega 13)
+
+Propuesta de la usuaria ("¿es posible crear en la página un módulo para crear usuarios, cambiar contraseñas e inactivar usuarios?"); diseño aprobado el 2 nov, **una sola administradora por ahora** (el código permite varias). Detalle en `DISENO_ADMIN_USUARIOS_v1.md`.
+
+| Verificación | Resultado |
+|---|---|
+| Pruebas automáticas | **225 de 225** (con Node 18: 201 pasan y 24 se omiten, las del Gestor) |
+| Navegador real | 18 comprobaciones del módulo nuevo y 20 de los anteriores |
+| Mutaciones | 14 de 15 detectadas; la restante es una redundancia legítima (la sesión ya se invalida por otra vía) |
+| Ensayo de actualización y reversión | 19 de 19 en una réplica fiel (la huella de `server.js` de la réplica coincidió con la de producción) |
+| Pruebas en el servidor de pruebas | Usuario `isamor` creado desde la pantalla; menú, lista y creación confirmados por la usuaria |
+| Actualización de producción | `deploy/actualizar.sh` el 2 nov: respaldo `/root/respaldos-manuales/asistente-v2-antes-20261102-031746` (54 archivos), pruebas 0 fallos, salud correcta, PM2 guardado, datos sin cambios. `server.js` = `21f6d973…` |
+| Prueba en producción | El Asistente comercial respondió correctamente (Biomilk 670, 750 y 306 con precio, oferta, página y vigencia de C11; "quedan 5 días") |
+
+### 13.4 Código en GitHub
+
+| Dato | Valor |
+|---|---|
+| Repositorio / rama | `gratitudysanacion/claude-set-up-claude-on-a-project`, rama `claude/gracious-ptolemy-qm2mvv`, carpeta `isamor-ai/` (76 archivos) |
+| Cuenta | Conexión con GitHub con la cuenta `gratitudysanacion` (correo [correo-redactado]) |
+| Commit | `f93308f` (2 nov). **Sin Pull Request**, por decisión de la usuaria |
+| Incidente | El envío falló con 403 ("GitHub authentication required" y luego "Claude doesn't have GitHub access…") hasta instalar la app de Claude en esa cuenta para el repositorio. Reintentar no sirve; la solución fue de permisos |
+| Contenido | Código, 225 pruebas, scripts de despliegue, pruebas de navegador, panel (referencia), v1 original y documentos. **Sin secretos**; en la copia del repositorio se redactan IP, huellas de llaves, nombre completo y correo |
+| Pendiente | Comprobar si el repositorio es privado (no se pudo verificar) y subir los cambios posteriores. Se entregó además un `.zip` de respaldo |
+
+### 13.5 Incidentes y lecciones del 1 y 2 de noviembre
+
+1. **El asistente de pruebas se cayó solo dos veces** (proceso `77825` y otro, sin causa registrada: el registro se sobrescribe al reiniciar). Desde entonces se arranca con `setsid` y se guarda el registro antes de reiniciar si vuelve a ocurrir.
+2. **Túnel cerrado** → `ERR_CONNECTION_REFUSED` en `localhost:3082`; no era la clave. Si el túnel abre y aun así hay `Connection refused`, el proceso del servidor no está escuchando.
+3. **Navegador con clave guardada** (icono de llave) puede autocompletar una clave vieja: probar en una ventana de incógnito.
+4. El menú **Usuarios** aparece solo después de iniciar sesión dentro de un módulo; no es evidente. Mejora anotada.
+5. `$!` con `setsid` no da el PID de `node`: se usa `pgrep -f`.
+6. El script `crear-usuario.js` ahora conserva rol, estado y demás campos (`fusionarRegistro`).
+
+### 13.6 Pendientes (2 nov, noche)
+
+| Prioridad | Pendiente | Responsable |
+|---|---|---|
+| **Plazo 5 nov** | C12: comprobar págs. 26, 56, 66 y 113 del PDF; decidir "compra especial" (60099, 60100, 60121, 60124); convertir con `--aprobar`, ensayo, programar y reiniciar producción | Usuaria y Claude |
+| **Antes del 3 nov** | Subir a GitHub los documentos actualizados y lo posterior al commit `f93308f` | Claude |
+| Gestor | Entrega 14 (pantallas) y luego redacción asistida; Node 22 para producción, llave propia, respaldo consistente de SQLite y revisión legal | Claude y usuaria |
+| Producción | Ajustar módulos de `admin` (hoy cuatro); comprobar el respaldo de las 08:00 UTC con el código nuevo | Usuaria |
+| Seguridad | Nginx (`autorizo nginx`); 60 actualizaciones y 1 no instalada; Node 18 sin soporte; hallazgos A y B del panel; limpieza de `/root/panel-staging`, `known_hosts` y copias `v3-antes-*`; Git en el servidor; verificar que el repositorio de GitHub sea privado | Usuaria y Claude |
+| Usuaria | Copia fuera del PC de la llave SSH y su frase; claves en el gestor de contraseñas; `baseline-20261026`; instantáneas en hPanel; desglose de Costo de la consola; `chmod 600` a `data/gestor.db*` en pruebas | Usuaria |
+
+## 14. Registro de cambios aplicados al servidor (1 y 2 nov 2026)
+
+Los comandos de reversión se dan siempre en un mensaje aparte (regla 8).
+
+| Cambio | Reversión |
+|---|---|
+| `/opt/yanbal-assistant` pasa de la v1 a la v2 (código); datos nuevos `data/catalogo_lectura.json` (437), `data/campana.json`, `data/usuarios.json`, `.env` (sin variables `GESTOR_*`); PM2 guardado | `deploy/revertir.sh` restaura la v1 desde `/root/respaldos-manuales/asistente-v1-20261102-015110` |
+| Actualización a la versión con administración de usuarios (solo código) | `deploy/revertir-actualizacion.sh` restaura desde `/root/respaldos-manuales/asistente-v2-antes-20261102-031746`; los usuarios vuelven al estado de ese respaldo |
+| Usuario `admin` de producción: clave restablecida, rol `admin`, módulos | Desde el módulo Usuarios |
+| `/root/produccion-v2/`, `/root/actualizacion-usuarios/`, `/root/paquetes-despliegue/` (paquetes y scripts) | Borrar las carpetas, con autorización |
+| Servidor de pruebas: Entrega 13 (`v3-antes-13`), usuario `admin` con clave restablecida y usuario `isamor` de prueba, reinicios con Node 22 | Restaurar `v3-antes-13` o desactivar el usuario de prueba desde el módulo Usuarios |
+| `data/usuarios.json.anterior` (copia automática de la versión previa en cada cambio de usuarios) | Es parte del diseño; no borrar |
+
+El panel, Gratitud, Nginx, UFW y el cron de respaldo **no se tocaron** en esta etapa.

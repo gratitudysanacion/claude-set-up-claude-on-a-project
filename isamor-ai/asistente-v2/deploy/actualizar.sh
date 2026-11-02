@@ -13,7 +13,7 @@ RESPALDOS="${RESPALDOS:-/root/respaldos-manuales}"
 PM2_NOMBRE="${PM2_NOMBRE:-yanbal-assistant}"
 PUERTO="${PUERTO:-3080}"
 ESPERADOS="${ESPERADOS:-437}"
-HASH_ACTUAL="${HASH_ACTUAL:-e90b7d83e123f808}"   # server.js desplegado el 2 nov 2026 (Entrega 12)
+HASH_ACTUAL="${HASH_ACTUAL:-21f6d9734dd8635c}"   # server.js en producción tras el 2 nov 2026 (Entrega 13). Cámbialo al instalar una versión nueva.
 RESTART_CMD="${RESTART_CMD:-}"                    # solo para pruebas; en producción se usa PM2
 FECHA="$(date +%Y%m%d-%H%M%S)"
 

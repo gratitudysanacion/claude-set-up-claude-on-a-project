@@ -99,3 +99,9 @@ Hoy hay tres copias del catálogo C11: JSON del panel (437, `pendiente_revision`
 - **Gestor de ventas:** SQLite cifrada (AES-256-GCM) en la VPS, aislamiento por usuaria, lectura de la administradora con registro de accesos, IA solo con datos enmascarados. Diseño en `DISENO_GESTOR_VENTAS_v1.md`.
 - **Carga de campañas:** PDF → artefacto de precios → Excel → `xlsx-a-consolidado.js` → `cargar-campana.js` (la campaña entra sola a las 00:00 hora de Colombia de su fecha de inicio). Guía en `GUIA_CARGA_CAMPANA.md`.
 - **Infraestructura:** Node 22 en paralelo; servidor de pruebas en el puerto 3082 solo por túnel SSH.
+
+## 12. Actualización del 2 de noviembre de 2026
+- **Producción ya corre la v2** (`yanbal-assistant`, puerto 3080, Node 18, `server.js` `21f6d973…`): Asistente comercial y Estudio de contenido con IA, y **administración de usuarios**. El Gestor de ventas sigue desactivado allí (requiere Node 22). Lo descrito en 3.1 corresponde a la v1 original, conservada como respaldo en `/root/respaldos-manuales/asistente-v1-20261102-015110`.
+- **Usuarios en caliente:** `data/usuarios.json` se modifica desde la aplicación (escritura atómica, permisos 600, copia anterior en `usuarios.json.anterior`); ver `DISENO_ADMIN_USUARIOS_v1.md`.
+- **Despliegue y actualización:** `deploy/desplegar.sh`, `deploy/actualizar.sh` y sus reversiones; ver `GUIA_DESPLIEGUE_Y_ACTUALIZACION.md`.
+- **Código en GitHub:** `gratitudysanacion/claude-set-up-claude-on-a-project`, rama `claude/gracious-ptolemy-qm2mvv`, carpeta `isamor-ai/`.

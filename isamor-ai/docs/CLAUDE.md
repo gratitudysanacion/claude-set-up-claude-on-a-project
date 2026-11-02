@@ -1,7 +1,7 @@
 # CLAUDE.md — Proyecto ISAMOR AI · Plataforma comercial Yanbal
 
 > Archivo de contexto para Claude Code. Colócalo en la raíz de la carpeta de trabajo del proyecto junto a los demás .md.
-> Fecha de corte del contexto: 30 de octubre de 2026 (noche). Actualizado tras construir y probar en el servidor de pruebas el Asistente comercial, el Estudio de contenido y el motor del Gestor de ventas, y tras preparar la carga del catálogo C12.
+> Fecha de corte del contexto: **2 de noviembre de 2026**. El Asistente comercial, el Estudio de contenido y la administración de usuarios **están en producción**; el motor del Gestor de ventas está activo solo en pruebas; el catálogo C12 está preparado pero sin cargar.
 
 ## Idioma y estilo de trabajo
 - Responder siempre en español neutro.
@@ -14,16 +14,17 @@
 
 ## Qué es el proyecto
 Plataforma comercial asistida por IA para consultoras de venta por catálogo. Se inicia con Yanbal, pero debe poder extenderse a cualquier empresa de catálogo (esquema multi-empresa).
-Cuatro módulos, en este orden en el menú lateral: 1 Asistente comercial, 2 Asesor de belleza, **3 Estudio de contenido**, 4 Gestor de ventas.
+Cuatro módulos, en este orden en el menú lateral: 1 Asistente comercial, 2 Asesor de belleza, **3 Estudio de contenido**, 4 Gestor de ventas, más **Usuarios** (quinto elemento, visible solo para administradoras). El inicio de sesión vive **dentro de cada módulo** (no en la pantalla de inicio): el menú Usuarios aparece después de iniciar sesión.
 
-**Estado real (30 oct 2026):**
-- **PRODUCCIÓN** (`yanbal-assistant`, puerto 3080): sigue la versión ORIGINAL v1 (solo interfaz, sin IA). Despliegue de la v2 previsto el **lunes 2 de noviembre**.
-- **PRUEBAS** (`/root/asistente-v2-pruebas/v3`, puerto 3082 solo localhost, Node 22): v2 con 207 pruebas automáticas aprobadas.
+**Estado real (2 nov 2026):**
+- **PRODUCCIÓN** (`yanbal-assistant`, puerto 3080, Node 18, tras Nginx en `yanbal.gratitudysanacion.com`): **v2 desplegada el 2 nov** (IA Haiku 5.5, módulos Asistente comercial y Estudio de contenido, **administración de usuarios**), con el Gestor de ventas desactivado. `server.js` = `21f6d973…`. La v1 original quedó respaldada en `/root/respaldos-manuales/asistente-v1-20261102-015110`.
+- **PRUEBAS** (`/root/asistente-v2-pruebas/v3`, puerto 3082 solo localhost, Node 22): la misma v2 con el Gestor activo; 225 pruebas automáticas aprobadas.
   - Módulo 1 Asistente comercial: **construido y aprobado** (IA Haiku 5.5, herramientas de catálogo, verificador, respaldo determinista).
   - Módulo 3 Estudio de contenido: **construido y aprobado** (reglas de marca verificadas por código).
-  - Módulo 4 Gestor de ventas: **motor construido y activo en pruebas** (SQLite cifrada, API, permisos); **faltan pantallas** y la redacción asistida.
+  - Módulo 4 Gestor de ventas: **motor construido y activo en pruebas** (SQLite cifrada, API, permisos); **faltan pantallas** (`public/gestor.js` está a medias y no se carga) y la redacción asistida.
+  - Administración de usuarios (menú **Usuarios**, solo administradoras): **en producción**. Ver `DISENO_ADMIN_USUARIOS_v1.md`.
   - Módulo 2 Asesor de belleza: **bloqueado**: faltan datos oficiales de productos.
-- Detalle y cronología: `ESTADO_PROYECTO_Y_PENDIENTES.md` (sección 11) y `DISENO_TECNICO_ASISTENTE_v1.md`.
+- Detalle y cronología: `ESTADO_PROYECTO_Y_PENDIENTES.md` (secciones 11 y 13) y `DISENO_TECNICO_ASISTENTE_v1.md`.
 
 ## Entorno
 - VPS Hostinger, Ubuntu 24.04, usuario root. Node.js 18.19.1 (del sistema; **sin soporte desde abril de 2025**), **Node 22.22.0 en paralelo en `/opt/node22`** (solo para el asistente v2 y el Gestor; no reemplaza al de sistema), npm 9.2.0, Python 3.12.3, Nginx 1.24.0, PM2.
@@ -37,6 +38,7 @@ Cuatro módulos, en este orden en el menú lateral: 1 Asistente comercial, 2 Ase
   - `/root/respaldos-manuales/` → respaldos manuales previos a cambios (p. ej. `login-20261026/server.js.original`). No lo rota el cron.
   - `/root/panel-staging/` → copia de prueba del login nuevo del panel (datos ficticios). Se retira con autorización tras aplicar el paso 4.
   - `/root/asistente-v2-pruebas/v3/` → **asistente v2 en pruebas** (puerto 3082, localhost). Copias de respaldo previas a cada entrega: `v3-antes-*`. Se arranca con `nohup` desde su carpeta (el `cd` en línea aparte, para que `$!` guarde el PID real en `pid-pruebas`); registro en `server-pruebas.log`. Contiene `.env` (llave de IA y llave de cifrado del Gestor), `data/usuarios.json` y `data/gestor.db`.
+  - `/root/respaldos-manuales/asistente-v1-20261102-015110` (v1 original) y `…/asistente-v2-antes-20261102-031746` (v2 previa a la administración de usuarios): respaldos completos con sus `.sha256`. `/root/produccion-v2/`, `/root/actualizacion-usuarios/` y `/root/paquetes-despliegue/` guardan los paquetes usados; no se borran sin autorización.
   - `/opt/node22/` → Node 22.22.0 (instalado con verificación de 3 huellas). `/root/descargas-node/` → su descarga.
   - `/root/c12-entrada/` → catálogo C12: `c12.pdf` (17,9 MB), `Catalogo_Yanbal_C12_2026_Precios.xlsx` (huella `e722e7de…901f593`) y scripts auxiliares.
 - **Acceso SSH (desde el 26 oct):** solo por llave ed25519 con passphrase (la privada vive en el PC de la usuaria, nunca se comparte ni se pega). Contraseña desactivada y `root` solo con llave. fail2ban activo (jail `sshd`, lista blanca `127.0.0.1/8`, `::1`, `169.254.0.0/16`).
@@ -65,6 +67,15 @@ Cuatro módulos, en este orden en el menú lateral: 1 Asistente comercial, 2 Ase
 16. **Datos personales (Gestor de ventas):** teléfono, cédula, dirección y notas van **cifrados** (AES-256-GCM); la IA solo recibe el primer nombre y las notas enmascaradas; nada se envía sin consentimiento registrado. La administradora **puede leer** los datos de otras usuarias (soporte) y cada lectura queda registrada; **no puede modificarlos**. La llave de cifrado NO está en el respaldo diario: se guarda en el gestor de contraseñas de la usuaria. Nunca se pega en un chat.
 17. **El modelo redacta, el código decide.** Precios, vigencias, 2x1, obsequios y sets se calculan y verifican en código; si el modelo incumple, se reintenta con la corrección exacta o se entrega una ficha determinista.
 18. **Precios del catálogo:** un catálogo nuevo nunca se carga sin pasar por la auditoría (`auditar-catalogo`), el ensayo de `cargar-campana.js` (sin `--aplicar`) y la revisión de filas "Revisar". Las filas que la herramienta no pudo comprobar contra el texto del PDF se aprueban **por código y solo después de comprobarlas a mano contra el catálogo** (`--aprobar`).
+19. **Producción se actualiza con `deploy/actualizar.sh`** (v2 → v2) o `deploy/desplegar.sh` (v1 → v2): verifican la huella de `server.js` esperada, corren las pruebas del paquete, hacen respaldo completo, no tocan `.env`, usuarios, catálogo ni campaña, verifican la salud y guardan PM2. La reversión (`revertir-actualizacion.sh` / `revertir.sh`) se entrega **en un mensaje aparte**. Procedimiento: `GUIA_DESPLIEGUE_Y_ACTUALIZACION.md`.
+20. **El servidor de pruebas se arranca separando el `cd`** y con `setsid` (`PORT=3082 setsid nohup /opt/node22/bin/node src/server.js > server-pruebas.log 2>&1 < /dev/null &`), y el PID se guarda con `pgrep`. Se cayó solo dos veces el 2 nov; si ocurre, guardar el registro antes de reiniciarlo (se sobrescribe).
+21. **Claves y usuarios:** nunca se pegan claves en un chat. Se cambian desde el módulo Usuarios o con `scripts/crear-usuario.js` (conserva rol y estado desde la Entrega 13). Cinco intentos fallidos por IP en 10 minutos bloquean 15 minutos; reiniciar el asistente limpia el bloqueo.
+
+## Código y GitHub
+- **Repositorio:** `gratitudysanacion/claude-set-up-claude-on-a-project`, rama **`claude/gracious-ptolemy-qm2mvv`**, carpeta **`isamor-ai/`** (el resto del repositorio es otro proyecto y no se toca). Primer envío: commit `f93308f` del 2 nov 2026. **Sin Pull Request** (decisión de la usuaria).
+- **Cuenta:** la conexión con GitHub es con la cuenta `gratitudysanacion` (correo [correo-redactado]). El envío falló varias veces con 403 hasta instalar la app de Claude en esa cuenta para ese repositorio (https://github.com/apps/claude/installations/select_target).
+- **Lo que se sube:** código, pruebas, scripts y documentos **sin secretos** (ni `.env`, usuarios, catálogos, bases de datos ni llaves). En la copia del repositorio se **redactan** las IP, las huellas de llaves, el nombre completo y el correo; las copias completas de los documentos las conserva la usuaria en su PC.
+- Pendiente: comprobar si el repositorio es privado (no se pudo verificar) y subir los cambios posteriores al 2 nov.
 
 ## Dónde está el trabajo pendiente
 - Estado, hallazgos de seguridad y plan de acción: `ESTADO_PROYECTO_Y_PENDIENTES.md`
@@ -73,15 +84,18 @@ Cuatro módulos, en este orden en el menú lateral: 1 Asistente comercial, 2 Ase
 - Diseño del Asistente comercial (MVP, API de solo lectura, reglas, pruebas): `DISENO_ASISTENTE_COMERCIAL_v1.md` (aprobado el 27 oct 2026; incluye la sección 15 con los cambios posteriores)
 - Diseño del Gestor de ventas (modelo de datos, cifrado, permisos, consentimiento, plan): `DISENO_GESTOR_VENTAS_v1.md` (aprobado el 30 oct 2026)
 - Procedimiento de carga de una campaña nueva (C12 y siguientes): `GUIA_CARGA_CAMPANA.md`
+- Administración de usuarios (diseño, API, salvaguardas): `DISENO_ADMIN_USUARIOS_v1.md`
+- Despliegue, actualización, reversión y servidor de pruebas: `GUIA_DESPLIEGUE_Y_ACTUALIZACION.md`
 
-## Siguiente paso inmediato (30 oct 2026)
+## Siguiente paso inmediato (2 nov 2026)
 
-**Fechas que mandan:** lunes 2 nov despliegue del módulo 1 a producción · martes 3 nov vencen los créditos de Claude en la nube de la usuaria · viernes 6 nov termina la campaña C11 · **sábado 7 nov 00:00 (Colombia) entra el C12** (hasta el 4 dic).
+**Fechas:** martes 3 nov vencen los créditos de Claude en la nube de la usuaria · viernes 6 nov termina la campaña C11 · **sábado 7 nov 00:00 (Colombia) entra el C12** (hasta el 4 dic).
 
-1. **C12 (bloquea el 7 nov):** la usuaria debe comprobar contra el PDF las páginas 26 y 56 (14 filas "Revisar") y las páginas 66 y 113 (5104 y 43891: ¿solo dentro del set?), y decidir la "compra especial" (60099, 60100, 60121, 60124). Luego: convertir con `--aprobar`, ensayo, programar. Ver `GUIA_CARGA_CAMPANA.md`.
-2. **Despliegue del lunes 2:** paquete final congelado + `deploy/desplegar.sh` y `revertir.sh` (ensayados 22/22), con la frase de autorización por paso. El C12 solo entra solo si el servidor de producción ya tiene el código v2.
-3. **Guardar el código en la rama del repositorio** (hoy solo existe en el entorno de trabajo y en el servidor de pruebas) y actualizar estos documentos. Antes del 3 nov.
-4. **Gestor de ventas:** Entrega 13 (pantallas) y 14 (redacción asistida e indicadores). Antes de activarlo en producción: llave propia de producción, respaldo consistente de la base SQLite y revisión legal del consentimiento.
-5. Seguridad pendiente: Nginx (`autorizo nginx`), 60 actualizaciones (sin pasar a Ubuntu 26.04) y 1 no instalada, hallazgos A y B del panel, limpieza de `/root/panel-staging/`, `known_hosts` y copias `v3-antes-*`, Git en el servidor.
+1. **C12 (plazo real: jueves 5 nov):** la usuaria debe comprobar contra el PDF las páginas 26 y 56 (14 filas "Revisar") y las páginas 66 y 113 (5104 y 43891: ¿solo dentro del set?), y decidir la "compra especial" (60099, 60100, 60121, 60124). Luego: convertir con `--aprobar`, ensayo, programar y reiniciar el asistente de producción (la campaña siguiente se lee al arrancar). Producción **ya tiene la v2**, así que puede entrar sola. Ver `GUIA_CARGA_CAMPANA.md`.
+2. **Documentación y código al repositorio:** subir los cambios posteriores al commit `f93308f`.
+3. **Gestor de ventas:** terminar las pantallas (Entrega 14) y luego la redacción asistida. Antes de activarlo en producción: Node 22 para `yanbal-assistant`, llave propia, respaldo consistente de la base SQLite y revisión legal del consentimiento.
+4. **Producción, ajustes menores:** el usuario `admin` de producción tiene los cuatro módulos; ajustarlo desde el módulo Usuarios si se desea. Comprobar el respaldo automático de las 08:00 UTC con el código nuevo.
+5. Seguridad pendiente: Nginx (`autorizo nginx`), 60 actualizaciones (sin pasar a Ubuntu 26.04) y 1 no instalada, Node 18 sin soporte, hallazgos A y B del panel, limpieza de `/root/panel-staging/`, `known_hosts` y copias `v3-antes-*`, Git en el servidor.
+6. Mejora de interfaz anotada: un acceso de inicio de sesión visible desde la pantalla de inicio.
 
-**Pendientes de la usuaria:** copia fuera del PC de `isamor_ed25519` y su passphrase; `ADMIN_USER`/`ADMIN_PASSWORD` y la llave del Gestor en el gestor de contraseñas; descargar `baseline-20261026`; instantáneas en hPanel; desglose de **Costo** en la consola de Anthropic (¿quién consumió ~0,43 USD del límite de 3 USD?); `chmod 600` a `data/gestor.db*` en pruebas.
+**Pendientes de la usuaria:** copia fuera del PC de `isamor_ed25519` y su passphrase; `ADMIN_USER`/`ADMIN_PASSWORD` del panel, la clave de `admin` del asistente y la llave del Gestor en el gestor de contraseñas; descargar `baseline-20261026`; instantáneas en hPanel; desglose de **Costo** de la consola de Anthropic (~0,43 USD sin explicar); `chmod 600` a `data/gestor.db*` en pruebas; respuestas del C12.

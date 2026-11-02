@@ -3,14 +3,14 @@
 > Esta carpeta contiene el proyecto ISAMOR AI. El resto del repositorio (`server.js`, `routes/`, `db/`, `tests/` en la raíz) es **otro proyecto** y no se ha tocado.
 > **No contiene secretos**: ni `.env`, ni `usuarios.json`, ni catálogos, ni bases de datos, ni llaves. En los documentos se redactaron direcciones IP, huellas de llaves y datos personales; los originales completos los conserva la persona responsable del proyecto.
 
-Estado al **2 de noviembre de 2026**.
+Estado al **2 de noviembre de 2026** (tras el despliegue a producción y la administración de usuarios).
 
 ## Qué hay aquí
 
 | Carpeta | Contenido |
 |---|---|
 | `asistente-v2/` | Código del asistente (Node, sin dependencias, CommonJS). `src/` servidor y reglas, `public/` interfaz, `scripts/` herramientas de administración, `test/` pruebas, `deploy/` actualización y reversión de producción |
-| `docs/` | Documentos del proyecto (`CLAUDE.md` es el punto de entrada). Última actualización de fondo: 30 oct; ver "Qué falta documentar" |
+| `docs/` | Documentos del proyecto, actualizados el 2 nov (`CLAUDE.md` es el punto de entrada). Incluyen `DISENO_ADMIN_USUARIOS_v1.md` y `GUIA_DESPLIEGUE_Y_ACTUALIZACION.md` |
 | `verificacion/` | Pruebas de navegador (Playwright) y ensayos de despliegue/actualización con réplicas locales |
 | `panel/` | Copia del código del panel de administración de catálogo (con el login endurecido del 26 oct), solo como referencia |
 | `asistente-original/` | La versión v1 del asistente (solo interfaz) que existía antes; se conserva por regla del proyecto |
@@ -40,8 +40,8 @@ Las pruebas de navegador (`verificacion/e2e*.js`) necesitan Playwright y se ejec
 - Datos personales cifrados (AES-256-GCM); la IA solo recibe datos enmascarados.
 - Cada cambio en el servidor lleva respaldo, plan de reversión y autorización expresa.
 
-## Qué falta documentar / hacer
+## Qué falta hacer
 
-- Los documentos de `docs/` aún no recogen por completo la Entrega 13 (administración de usuarios), el despliegue del 2 nov (`deploy/actualizar.sh`) ni el estado final de producción.
-- Pantallas del Gestor de ventas y su redacción asistida por IA.
-- Carga del catálogo C12 (ver `docs/GUIA_CARGA_CAMPANA.md`).
+- Pantallas del Gestor de ventas (Entrega 14) y su redacción asistida por IA.
+- Carga del catálogo C12 (ver `docs/GUIA_CARGA_CAMPANA.md`); entra el 7 de noviembre.
+- Pendientes de seguridad y mantenimiento del servidor: ver `docs/ESTADO_PROYECTO_Y_PENDIENTES.md`, secciones 13.6 y 14.

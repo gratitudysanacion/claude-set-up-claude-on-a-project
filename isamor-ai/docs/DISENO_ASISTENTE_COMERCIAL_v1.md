@@ -1,5 +1,5 @@
 # ISAMOR AI – Diseño del Asistente comercial (módulo 1)
-## Versión 1.2 · actualizado el 30 de octubre de 2026 · Estado: **APROBADO el 27 oct 2026; IMPLEMENTADO y aprobado en pruebas** (despliegue a producción previsto el lunes 2 nov 2026). Los cambios posteriores a la aprobación están en la sección 15.
+## Versión 1.3 · actualizado el 2 de noviembre de 2026 · Estado: **APROBADO el 27 oct 2026; IMPLEMENTADO y EN PRODUCCIÓN desde el 2 nov 2026**. Los cambios posteriores a la aprobación están en la sección 15.
 
 > Escenario del plan elegido: **B**. Construir y probar con la campaña C11 como datos de prueba, desplegar de forma interna hacia el 5 de noviembre y usar el cambio a la campaña C12 como primera prueba real del procedimiento de carga.
 
@@ -314,3 +314,5 @@ El MVP es pequeño y de bajo riesgo si se respeta una regla: **el modelo redacta
 | Decisión 5 (copia de lectura) | Se regenera con `scripts/exportar-lectura.js` bajo demanda; para una campaña nueva se usa `cargar-campana.js` |
 | Decisión 8 (promociones) | Se mantiene el texto literal. Pendiente de decisión: **"compra especial"** (60099, 60100, 60121, 60124; $3.000 a $3.500). Propuesta: decir el precio con la aclaración de que solo aplica con la compra de un producto y no se vende suelto |
 | Pruebas | 207 pruebas automáticas (Node 22) y verificaciones con mutaciones; navegador con Playwright (20 comprobaciones) |
+| Producción (2 nov) | Desplegado en `yanbal.gratitudysanacion.com` (`yanbal-assistant`, puerto 3080, Node 18). Primera consulta real: Biomilk 670, 750 y 306 con precio, oferta, página y vigencia de C11 correctos |
+| Usuarios | Se administran desde el módulo Usuarios (ver `DISENO_ADMIN_USUARIOS_v1.md`); ya no hace falta la terminal para crear usuarios ni cambiar claves |

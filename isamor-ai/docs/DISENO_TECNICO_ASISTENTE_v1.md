@@ -1,5 +1,5 @@
 # ISAMOR AI – Diseño técnico del Asistente comercial (módulo 1)
-## Versión 1.2 · actualizado el 30 de octubre de 2026 · Complementa a `DISENO_ASISTENTE_COMERCIAL_v1.md` (aprobado)
+## Versión 1.3 · actualizado el 2 de noviembre de 2026 · Complementa a `DISENO_ASISTENTE_COMERCIAL_v1.md` (aprobado)
 
 > Las secciones 1 a 7 son el diseño del 27 oct. **La sección 8 y las secciones 10 a 15 reflejan lo construido al 30 oct.** Donde el diseño inicial decía "un solo módulo conectado" o "tope de 600 tokens", rige lo actual.
 
@@ -130,7 +130,8 @@ asistente-v2/
 | Conversor del Excel del catálogo, regla de sets del C12 | **Hecho** (entrega 12) |
 | Gestor: pantallas (13) y redacción asistida (14) | Pendiente |
 | Pruebas en el servidor con Node 18 | **Hecho**: 184 pasan y 23 se omiten (las del Gestor requieren SQLite integrado); con Node 22: 207 de 207 |
-| Despliegue a producción | Previsto lunes 2 nov, con la frase de autorización por paso |
+| Despliegue a producción | **Hecho el 2 nov** (`desplegar.sh`), y actualización con administración de usuarios (`actualizar.sh`) el mismo día |
+| Administración de usuarios | **Hecha** (entrega 13), en producción. Ver sección 16 |
 
 ## 9. Autorizaciones que se te pedirán
 
@@ -191,3 +192,22 @@ Diseño completo en `DISENO_GESTOR_VENTAS_v1.md`. Piezas de código: `src/cifrad
 ## 15. Costos y límites (medidos)
 
 Haiku 5.5: 0,10 USD de entrada y 0,50 USD de salida por millón de tokens (hasta 100.000 de entrada). Consulta comercial ≈ 0,0008 USD; de contenido ≈ 0,002 USD. El límite de gasto de la organización es de 3 USD al mes y se **comparte** con otros usos de la cuenta. El razonamiento adaptativo de Haiku 5.5 consume tokens de salida; `budget_tokens` no existe en este modelo (devuelve 400).
+
+## 16. Administración de usuarios (entrega 13)
+
+Diseño y decisiones en `DISENO_ADMIN_USUARIOS_v1.md`. Piezas de código: `src/auth.js` (usuarios, sesiones y cola de escritura), `src/usuarios-archivo.js` (guardado atómico), rutas en `src/server.js`, pantallas en `public/usuarios.js` y `public/app.js`.
+
+| Ruta | Quién | Efecto |
+|---|---|---|
+| `GET /api/admin/usuarios` | Administradora | Lista (sin claves) |
+| `POST /api/admin/usuarios` | Administradora | Crea con clave temporal y módulos |
+| `PUT /api/admin/usuarios/:u` | Administradora | Cambia módulos, rol o estado (activo/inactivo) |
+| `POST /api/admin/usuarios/:u/clave` | Administradora | Restablece con clave temporal |
+| `POST /api/cuenta/clave` | Cualquier usuario con sesión | Cambia su propia clave (pide la actual; comparte el límite de intentos por IP) |
+| `GET /api/sesion` | — | Informa `admin` y `cambiar_clave` |
+
+Mientras la clave sea temporal (`cambiar_clave`), `/api/chat`, `/api/gestor/*` y `/api/admin/*` responden 403 con `codigo: cambiar_clave`; solo se puede cambiarla o cerrar sesión.
+
+## 17. Despliegue y actualización de producción
+
+Procedimiento paso a paso en `GUIA_DESPLIEGUE_Y_ACTUALIZACION.md`. `desplegar.sh` (v1 → v2) y `actualizar.sh` (v2 → v2, exige la huella de `server.js` esperada, no toca datos). El script de despliegue **no copia las variables `GESTOR_*`** del `.env` de pruebas a producción.

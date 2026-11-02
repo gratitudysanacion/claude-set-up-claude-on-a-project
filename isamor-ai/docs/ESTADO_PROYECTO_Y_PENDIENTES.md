@@ -540,5 +540,7 @@ El panel, Gratitud, Nginx, UFW y el cron de respaldo **no se tocaron** en esta e
 | Conversor | `--correcciones` (ver `GUIA_CARGA_CAMPANA.md`, sección 6b) |
 | Pruebas | 236 automáticas (Node 18 y 22), 9 de 9 mutaciones detectadas, ensayo de actualización de producción 19/19 |
 | Resultado sobre el Excel real | 451 productos tras correcciones (6 filas tocadas), 3 compras especiales, 22 promociones 2 x 1, 11 obsequios, 2 sets sin precio propio |
-| Siguiente | Instalar la Entrega 14 en pruebas (`autorizo entrega 14`), confirmar el 60121, convertir y programar el C12 para el 7 nov, y actualizar producción (`autorizo actualizar`; `server.js` no cambió: la huella esperada sigue siendo `21f6d973…`) |
-
+| Entrega 14 en pruebas | Instalada y verificada (212 aprobadas con Node 18, 24 del Gestor omitidas; 236 con Node 22). Pruebas en navegador con el C12 simulado vigente: 60099, 60124, 60121, 5104 y Zentro correctos |
+| 60121 | Es la "Bolsa de Regalo" a $3.000 sin condición de compra: producto normal con solo precio de oferta (no es compra especial) |
+| Producción | Código actualizado el 2 nov (respaldo `asistente-v2-antes-20261102-043236`; `server.js` sin cambio, huella `21f6d973…`). C12 programado (451 productos, 7 nov al 4 dic 2026) y servicio reiniciado el 2 nov: el registro confirma "Campaña siguiente programada". Entra sola a las 00:00 del 7 nov |
+| Pendiente | Tras el 7 nov: probar 3 consultas reales y ejecutar `cargar-campana.js --promover --aplicar` en producción. Servidor de pruebas: volver al arranque normal (hoy corre con el C12 simulado mediante `CATALOGO_LECTURA` y `CAMPANA`). Hardening: `campana.json` y `catalogo.json` de producción están en 644 |

@@ -1,5 +1,5 @@
 # ISAMOR AI – Diseño del respaldo de la base del Gestor de ventas
-## Versión 1.1 · 2 de noviembre de 2026 · Estado: **PROPUESTO (pendiente de aprobación de la usuaria)**
+## Versión 1.1 · 2 de noviembre de 2026 · Estado: **APROBADO por la usuaria el 2 nov 2026; scripts IMPLEMENTADOS e instalados en PRUEBAS (Entregas 16 y 16b); cron y exclusión del `tar` pendientes para el paso a producción**
 
 > No contiene claves ni valores de variables de entorno.
 
@@ -82,3 +82,14 @@ Prueba automática de copia con escritor concurrente **en otro proceso**, integr
 ## 8. Decisiones pendientes de la usuaria
 
 Retención (14 copias), destino de la copia externa, y aprobar la exclusión de `gestor.db*` del respaldo actual.
+
+## 9. Resultado de la implementación (2 nov 2026)
+
+| Elemento | Resultado |
+|---|---|
+| Scripts | `scripts/respaldar-gestor.js` y `scripts/restaurar-gestor.js` (sin dependencias, Node 22) |
+| Pruebas | 14 automáticas nuevas dentro de las 248; otro proceso escribiendo mientras se respalda; llave equivocada; base dañada; retención; restauración con `-wal` vivo. 8 de 9 roturas intencionales detectadas (la restante es una verificación redundante) |
+| Hallazgo real en pruebas | `gestor.db` pesaba 4.096 bytes y su `-wal` 86.552: el contenido vive en el `-wal`; una copia directa del `.db` habría guardado una base vacía |
+| Ensayo real en pruebas | Respaldo de 1 clienta verificado (600 en carpeta 700); ensayo de restauración; restauración aplicada sobre una base de práctica |
+| Error hallado en el ensayo | Dos restauraciones en el mismo segundo chocaban en el nombre de la copia previa (`VACUUM INTO` no sobrescribe). Se falló sin tocar la base. Corregido en la Entrega 16b con prueba |
+| Pendiente para producción | Línea `--exclude='gestor.db*'` en `respaldo-yanbal.sh` (con copia previa), cron `10 8 * * *` con `/opt/node22/bin/node` hacia `/opt/respaldos-yanbal/gestor/`, copiar los scripts por `actualizar.sh`, copia externa semanal, limpieza de las carpetas de práctica de pruebas |

@@ -54,6 +54,7 @@ const CLAVE = 'clave-de-prueba-123';
   assert.ok(!(await a.p.isVisible('#chat-area')));
   assert.equal(await a.p.textContent('#workspace-title'), 'Gestor de ventas');
   assert.match(await a.p.textContent('#mg-contenido'), /No hay clientas|aún no tiene|Todavía no/i);
+  assert.ok(!/\bnull\b|undefined/.test(await a.p.textContent('#manager-area')), 'la pantalla no debe mostrar "null" ni "undefined"');
   ok('la usuaria entra al Gestor: sin chat, con indicadores y lista vacía');
 
   await a.p.click('#mg-nueva');
@@ -92,6 +93,7 @@ const CLAVE = 'clave-de-prueba-123';
   assert.match(fila, /Marta/);
   assert.ok(!/1020304050|3001234567/.test(fila), 'la lista no muestra cédula ni teléfono completo');
   assert.match(fila, /4567/);
+  assert.ok(!/\bnull\b|undefined/.test(await a.p.textContent('#manager-area')), 'la lista no debe mostrar "null" ni "undefined"');
   await a.p.fill('#mg-buscar', 'zzz');
   await a.p.waitForFunction(() => /No hay clientas que coincidan/.test(document.querySelector('#mg-contenido').textContent));
   await a.p.fill('#mg-buscar', 'Marta');

@@ -35,6 +35,11 @@
     return nodo;
   }
 
+  // replaceChildren escribe "null" como texto si recibe un valor vacío: se descartan antes.
+  function reemplazar(nodo, ...hijos) {
+    nodo.replaceChildren(...hijos.flat().filter(h => h !== undefined && h !== null && h !== false));
+  }
+
   const hoyColombia = () => new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Bogota', year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date());
   const fechaCorta = iso => { const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(String(iso || '')); return m ? `${m[3]}/${m[2]}/${m[1]}` : ''; };
   const fechaHora = iso => {
@@ -70,7 +75,7 @@
 
   // ---------- Estructura base ----------
   function armarBase() {
-    raiz.replaceChildren(
+    reemplazar(raiz,
       el('div', { clase: 'mg-pestanas', role: 'tablist', 'aria-label': 'Secciones del Gestor' },
         pestana('lista', 'Clientas'), pestana('recordatorios', 'Recordatorios'), S.admin ? pestana('soporte', 'Soporte') : null),
       el('div', { id: 'mg-modo', clase: 'mg-modo hidden', role: 'status' }),
@@ -114,7 +119,7 @@
     const d = r.datos;
     const tarjeta = (titulo, valor, clase = '', accion) => el(accion ? 'button' : 'div', { type: accion ? 'button' : undefined, clase: `mg-kpi ${clase}`.trim(), alClick: accion },
       el('span', { clase: 'mg-kpi-valor', texto: String(valor) }), el('span', { clase: 'mg-kpi-titulo', texto: titulo }));
-    caja.replaceChildren(
+    reemplazar(caja,
       tarjeta('Clientas', d.total),
       tarjeta('Recordatorios vencidos', d.recordatorios.vencidos, d.recordatorios.vencidos ? 'alerta' : '', () => irA('recordatorios')),
       tarjeta('Para hoy', d.recordatorios.hoy, '', () => irA('recordatorios')),
@@ -158,7 +163,7 @@
     }
     const mas = S.clientas.length < S.total
       ? el('button', { type: 'button', clase: 'secondary', id: 'mg-mas', texto: `Ver más (${S.clientas.length} de ${S.total})`, alClick: () => cargarLista({ mas: true }) }) : null;
-    contenido().replaceChildren(barra, cuerpo, mas);
+    reemplazar(contenido(), barra, cuerpo, mas);
     if (document.activeElement === document.body) buscador.focus({ preventScroll: true });
   }
 
@@ -233,7 +238,7 @@
 
   function vistaNueva() {
     S.vista = 'nueva';
-    contenido().replaceChildren(el('h3', { clase: 'mg-titulo', id: 'mg-titulo', tabindex: '-1', texto: 'Nueva clienta' }), formulario({ nueva: true }));
+    reemplazar(contenido(), el('h3', { clase: 'mg-titulo', id: 'mg-titulo', tabindex: '-1', texto: 'Nueva clienta' }), formulario({ nueva: true }));
     raiz.querySelector('#mg-nombre').focus();
   }
 
@@ -283,7 +288,7 @@
         el('button', { type: 'button', clase: 'mg-borrar', id: 'mg-confirmar-si', texto: 'Sí, borrar definitivamente', alClick: eliminar }),
         el('button', { type: 'button', clase: 'secondary', texto: 'Cancelar', alClick: () => { mostrarNodo(raiz.querySelector('#mg-confirmar'), false); mostrarNodo(raiz.querySelector('#mg-borrar'), true); } })));
 
-    contenido().replaceChildren(
+    reemplazar(contenido(), 
       el('div', { clase: 'mg-ficha-cabecera' },
         el('button', { type: 'button', clase: 'secondary', texto: '← Volver a la lista', alClick: () => irA('lista') }),
         el('h3', { clase: 'mg-titulo', id: 'mg-titulo', tabindex: '-1', texto: c.nombre }),
@@ -350,7 +355,7 @@
           el('span', { texto: r.texto }))))
           : el('p', { clase: 'mg-vacio', texto: 'Nada por aquí.' }));
     });
-    contenido().replaceChildren(el('h3', { clase: 'mg-titulo', id: 'mg-titulo', tabindex: '-1', texto: 'Recordatorios' }), ...secciones);
+    reemplazar(contenido(), el('h3', { clase: 'mg-titulo', id: 'mg-titulo', tabindex: '-1', texto: 'Recordatorios' }), ...secciones);
   }
 
   // ---------- Soporte (solo administradora) ----------
@@ -366,7 +371,7 @@
     } });
     const salir = soloLectura() ? el('button', { type: 'button', clase: 'secondary', id: 'mg-salir-soporte', texto: 'Salir del modo soporte', alClick: async () => { S.duena = null; await irA('lista'); } }) : null;
     const filas = a.estado === 200 ? a.datos.accesos : [];
-    contenido().replaceChildren(
+    reemplazar(contenido(), 
       el('h3', { clase: 'mg-titulo', id: 'mg-titulo', tabindex: '-1', texto: 'Soporte' }),
       el('p', { texto: 'Como administradora puedes leer los datos de otras usuarias para darles soporte. No puedes modificarlos y cada consulta queda registrada abajo.' }),
       lista.length ? el('div', { clase: 'mg-barra' }, selector, ver, salir) : el('p', { clase: 'mg-vacio', texto: 'Ninguna otra usuaria tiene el Gestor habilitado.' }),

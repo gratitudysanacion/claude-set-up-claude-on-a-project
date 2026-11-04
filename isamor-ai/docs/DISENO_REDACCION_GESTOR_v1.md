@@ -1,7 +1,16 @@
 # ISAMOR AI – Diseño de la redacción asistida de mensajes en el Gestor de ventas
-## Versión 1 · 4 de noviembre de 2026 · Estado: **PROPUESTO (pendiente de decisiones de la usuaria)**
+## Versión 1.1 · 4 de noviembre de 2026 · Estado: **DECISIONES DE LA USUARIA RECIBIDAS; IMPLEMENTADO en el sandbox (Entrega 17); pendiente de instalar en pruebas. Producción solo tras la revisión legal**
 
 > No contiene claves ni datos personales reales.
+
+## 0. Decisiones de la usuaria (4 nov 2026)
+
+| # | Decisión |
+|---|---|
+| 1 | Alcance: **mensajes de seguimiento, recordatorios y respuestas a clientas** (tres tipos; la respuesta exige pegar el mensaje de la clienta) |
+| 2 | **Acepta enviar las notas enmascaradas** (sin teléfono, cédula ni dirección) a un proveedor externo (Anthropic). Condición para producción: visto bueno del abogado |
+| 3 | **Límite mensual de gasto de IA: 10 USD** (para todos los módulos de IA). El límite de la organización en la consola de Anthropic debe subirse a 10 USD o más: hoy es de 3 USD |
+| Por defecto (no objetadas) | Primera versión **sin precios** (solo la cifra que la propia usuaria escriba); 30 borradores al día por usuaria; tono cercano y cálido, tuteo, hasta 70 palabras |
 
 ## 1. Objetivo
 
@@ -106,3 +115,15 @@ Enmascarado con textos reales de notas (teléfonos, cédulas, direcciones, corre
 3. Límite diario por usuaria (propuesta: 30).
 4. Tono por defecto: cercano y cálido, tuteo, mensajes de un máximo de 60 palabras, con un cierre de una pregunta [Suponiendo]. Ajustable.
 5. Visto bueno del abogado sobre el proveedor externo (condición para producción).
+
+## 12. Implementación (Entrega 17, 4 nov 2026)
+
+| Elemento | Detalle |
+|---|---|
+| `src/redaccion.js` | Solicitud validada; mensaje al modelo con nombre de pila, etapa y notas/mensaje/indicaciones **enmascarados y sin etiquetas**; instrucciones; verificador (datos sensibles, marcas de enmascarado, números, importes, términos de marca, otros alfabetos, largo); un reintento; plantilla fija si falla |
+| `src/gasto.js` | Contador mensual de tokens valorados con los precios de Haiku 5.5 (configurables); aviso al 80 %; **bloqueo al llegar al tope** (10 USD, variable `TOPE_MENSUAL_USD`); persiste en `data/gasto.json` (600) solo totales; se reinicia cada mes (hora de Colombia) |
+| API | `POST /api/gestor/clientas/:id/redactar` (solo fichas propias; 6 por minuto y 30 al día; 503 `limite_mensual` al llegar al tope); el chat de los otros módulos también suma y respeta el tope; `GET /api/admin/gasto` (solo administradora; se puede abrir en el navegador con la sesión iniciada) |
+| Pantalla | Bloque «Redactar un mensaje para esta clienta» en la ficha: tipo, mensaje de la clienta (solo en respuestas), indicaciones, borrador editable y botón Copiar. No existe en modo soporte |
+| Pruebas | 279 automáticas; 16 de 16 roturas intencionales detectadas; 22 comprobaciones de navegador del Gestor (5 nuevas) |
+| Hallazgo | El nombre de la clienta también podía abrir etiquetas en el mensaje al modelo: ahora se limpia (con prueba) |
+| Pendiente | Instalar en pruebas, revisar el estilo de los mensajes, subir el límite de la organización en la consola, revisión legal y asignar el módulo (Fase B) |

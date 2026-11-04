@@ -573,3 +573,14 @@ El panel, Gratitud, Nginx, UFW y el cron de respaldo **no se tocaron** en esta e
 | Hallazgo | El Bloque 0 de seguridad (módulo `manager` en `admin`) salió con el módulo presente y se continuó; se corrigió de inmediato sin datos en riesgo (0 clientas) |
 
 Siguiente: revisión legal del consentimiento (bloquea la Fase B), consultas del C12 el 7 u 8 nov y `--promover`.
+
+## 18. Redacción asistida y «Mi estilo» (4 de noviembre de 2026, tarde y noche)
+
+| Tema | Estado |
+|---|---|
+| Decisiones de la usuaria | Alcance: seguimiento, recordatorios y respuestas a clientas; acepta enviar notas enmascaradas a Anthropic (condicionado al abogado); límite mensual de 10 USD; pidió un selector de estilo y luego «Mi estilo», español natural y aviso de promesas |
+| Entregas 17, 17b, 17c | En pruebas; no en producción. 300 pruebas; 12 de 12 roturas intencionales detectadas en lo último |
+| Medición real | ~0,0003 USD por borrador con Haiku 5.5 |
+| Esquema de la base | Versión 2 (tabla `estilos`), migrada en pruebas el 4 nov con respaldo previo y 1 clienta conservada |
+| Hallazgos de la sesión | El nombre de la clienta podía abrir etiquetas en el mensaje al modelo (corregido); el «null» en pantalla (15b); el tamaño de las pestañas (16 px frente a 12-13 px); un borrador con «regalo» y «consentirte» llevó a verificar promesas por código; un choque de nombres en la restauración dentro del mismo segundo (16b) |
+| Pendientes | Probar «Mi estilo» con mensajes reales de la usuaria; subir el límite de la organización en la consola; revisión legal; Fase B; llevar 17 a 17c a producción con respaldo previo |

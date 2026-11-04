@@ -118,3 +118,7 @@ Node 22 o superior (`node:sqlite`) y `GESTOR_LLAVE`. En Node 18 el servidor arra
 ## 12. Pruebas
 
 31 pruebas automáticas del Gestor y de su API (más 1 de permisos de archivos), entre ellas: consentimiento obligatorio, datos **no** en claro dentro de la base, un dato copiado a otra fila no se descifra, aislamiento entre usuarias, lectura de la administradora con registro y sin escritura, búsqueda sin inyección, límites, recordatorios por fecha, indicadores, base en disco que sobrevive al cierre y no se abre con otra llave, y rechazo de escrituras desde otro origen. Se verificaron con mutaciones (romper el código a propósito y comprobar que alguna prueba falla); la única mutación que no se detecta es redundante (la salvaguarda de escritura ajena, que además es imposible de invocar por la API).
+
+## 13. Actualización del 4 nov 2026 (Entrega 17c)
+
+Esquema de `gestor.db` en **versión 2**: tabla `estilos (usuaria, ejemplos_cif, actualizado)` con los mensajes de ejemplo de «Mi estilo» (hasta 3 de 500 caracteres, 1.200 en total, **cifrados** con contexto `usuaria|estilo|ejemplos` y **enmascarados** antes de guardar). Solo la propia usuaria los lee o cambia; la administradora no los ve. Detalles en `DISENO_REDACCION_GESTOR_v1.md`, sección 13.

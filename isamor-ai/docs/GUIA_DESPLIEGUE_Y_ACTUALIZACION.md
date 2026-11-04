@@ -101,3 +101,17 @@ Todas se instalan con el `entregaN_pegar.txt` (verifica huella, copia `v3-antes-
 **Reversión a Node 18 (sin tocar datos):** `pm2 delete yanbal-assistant`, luego desde `/root`: `pm2 start /opt/yanbal-assistant/src/server.js --name yanbal-assistant` y `pm2 save`. El Gestor volvería a quedar desactivado (Node 18 no trae SQLite) y `gestor.db` se conserva. Cuando el Gestor tenga datos, no volver a Node 18 sin respaldar antes la base.
 
 **Si hay que actualizar el código de producción otra vez:** `actualizar.sh` hace `pm2 restart yanbal-assistant`, que conserva el intérprete Node 22. Verificar `pm2 describe yanbal-assistant | grep -E "interpreter|node.js version"`.
+
+## 11. Entregas 17, 17b y 17c en pruebas (4 nov 2026) y cambio de esquema de `gestor.db`
+
+| Entrega | Contenido |
+|---|---|
+| 17 | Redacción asistida de mensajes (`src/redaccion.js`), tope mensual de gasto de la IA (`src/gasto.js`, 10 USD, `data/gasto.json`) y `GET /api/admin/gasto` |
+| 17b | Campo **Estilo** (cercano, formal, breve, entusiasta) y tamaño de letra de las pestañas |
+| 17c | Español natural y verificación de promesas no escritas por la asesora; aviso junto al borrador; **«Mi estilo»** cifrado (`GET/PUT/DELETE /api/gestor/estilo`) |
+
+**Cambio de esquema (versión 1 → 2):** la tabla `estilos` se crea sola al abrir la base. Procedimiento: (1) `scripts/respaldar-gestor.js` **antes** de reiniciar; (2) instalar el paquete; (3) reiniciar; (4) comprobar con `PRAGMA user_version` (esperado 2) y el número de clientas. Un respaldo antiguo (versión 1) se abre y se actualiza solo. **No se puede volver a una versión del código anterior a la 17c con una base ya migrada sin restaurar un respaldo de la versión 1** (el código antiguo ignora la tabla nueva pero conviene respaldar antes de cualquier reversión).
+
+**Producción:** aún no tiene las Entregas 17 a 17c. Para llevarlas: paquete nuevo con la huella actual de `server.js` de producción como `HASH_ACTUAL`; respaldo de `gestor.db` antes del reinicio; la migración ocurre al arrancar; PM2 conserva Node 22 con `pm2 restart`.
+
+**Variables nuevas (opcionales):** `TOPE_MENSUAL_USD` (10), `PRECIO_ENTRADA_USD_MTOK` (0,10), `PRECIO_SALIDA_USD_MTOK` (0,50), `LIMITE_REDACCION_DIA` (30), `GASTO` (ruta de `gasto.json`).

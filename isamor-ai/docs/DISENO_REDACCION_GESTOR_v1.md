@@ -127,3 +127,15 @@ Enmascarado con textos reales de notas (teléfonos, cédulas, direcciones, corre
 | Pruebas | 279 automáticas; 16 de 16 roturas intencionales detectadas; 22 comprobaciones de navegador del Gestor (5 nuevas) |
 | Hallazgo | El nombre de la clienta también podía abrir etiquetas en el mensaje al modelo: ahora se limpia (con prueba) |
 | Pendiente | Instalar en pruebas, revisar el estilo de los mensajes, subir el límite de la organización en la consola, revisión legal y asignar el módulo (Fase B) |
+
+## 13. Ajustes del 4 nov 2026 (Entregas 17b y 17c)
+
+| Elemento | Detalle |
+|---|---|
+| Estilos | Cercano y cálido (tú, 70 palabras, hasta 2 emojis), Formal y respetuoso (usted, sin emojis), Breve y directo (35 palabras, sin emojis), Entusiasta y motivador (80 palabras, hasta 3 emojis). El código verifica largo (con 25 % de tolerancia) y emojis; las plantillas de respaldo respetan el trato |
+| Ejemplos de tono | Dos por estilo, que pasan el mismo verificador (prueba automática) |
+| Español natural | Instrucción nueva: frases cortas y cotidianas, sin construcciones forzadas ni traducidas |
+| Promesas | El borrador no puede mencionar regalo, obsequio, descuento, gratis, sorpresa, promoción, oferta, 2 x 1, cortesía, bono, cupón ni premio **salvo que esa palabra esté en las notas, las indicaciones o el mensaje de la clienta** (lo escribió la asesora). Si aparece, se corrige una vez y luego plantilla |
+| Aviso en pantalla | «Revisa que no prometa nada que no puedas cumplir (regalos, descuentos, fechas): el compromiso final es tuyo.» |
+| «Mi estilo» | 1 a 3 mensajes de la usuaria, cifrados, enmascarados y solo suyos; la IA los recibe como datos para imitar el trato, el tono, el largo y los emojis; el largo y los emojis permitidos se calculan de los ejemplos (piso 35 palabras, tope 100 palabras y 4 emojis); se puede quitar |
+| Medición | ~0,0003 USD por borrador (dos borradores reales: 0,0006 USD) |

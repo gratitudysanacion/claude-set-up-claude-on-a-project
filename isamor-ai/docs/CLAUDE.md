@@ -1,7 +1,7 @@
 # CLAUDE.md — Proyecto ISAMOR AI · Plataforma comercial Yanbal
 
 > Archivo de contexto para Claude Code. Colócalo en la raíz de la carpeta de trabajo del proyecto junto a los demás .md.
-> Fecha de corte del contexto: **2 de noviembre de 2026 (cierre del día)**. El Asistente comercial, el Estudio de contenido y la administración de usuarios **están en producción**; el motor del Gestor de ventas está activo solo en pruebas; el catálogo C12 está preparado pero sin cargar.
+> Fecha de corte del contexto: **4 de noviembre de 2026 (cierre del día)**. El Asistente comercial, el Estudio de contenido y la administración de usuarios **están en producción**; el motor del Gestor de ventas está activo solo en pruebas; el catálogo C12 está preparado pero sin cargar.
 
 ## Idioma y estilo de trabajo
 - Responder siempre en español neutro.
@@ -88,24 +88,25 @@ Cuatro módulos, en este orden en el menú lateral: 1 Asistente comercial, 2 Ase
 - Administración de usuarios (diseño, API, salvaguardas): `DISENO_ADMIN_USUARIOS_v1.md`
 - Despliegue, actualización, reversión y servidor de pruebas: `GUIA_DESPLIEGUE_Y_ACTUALIZACION.md`
 
-## Siguiente paso inmediato (al cierre del 4 nov 2026)
+## Siguiente paso inmediato (al cierre del 4 nov 2026, noche; continuar el 5 nov)
 
 **Fechas:** viernes 6 nov termina la campaña C11 · **sábado 7 nov 00:00 (Colombia) entra solo el C12** (hasta el 4 dic).
 
-**Hecho hasta el 4 nov:** v2, administración de usuarios y regla de compra especial en producción; **C12 programado** (451 productos, 7 nov al 4 dic) y confirmado en el registro; respaldo diario de las 08:00 UTC verificado con el código nuevo (232.958 bytes); consulta normal en producción con C11 correcta; **Fase A del Gestor completa en producción** (4 nov): código con las pantallas y los scripts de respaldo, `GESTOR_LLAVE` propia (rotada porque la primera se mostró en el chat; no había datos cifrados), `yanbal-assistant` en **Node 22** (PM2 id 3, intérprete `/opt/node22/bin/node`, cwd `/root`), `--exclude='gestor.db*'` en el `tar` de `respaldo-yanbal.sh` (copia `respaldo-yanbal.sh.antes-20261104`), cron `10 8 * * *` del respaldo del Gestor (copia `crontab-antes-20261104.txt`) y primer respaldo real (0 clientas). El Gestor está **activo pero sin usuarias asignadas** (se quitó `manager` a `admin`).
+**Producción (sin cambios desde la mañana del 4 nov):** v2 con Comercial, Contenido y administración de usuarios; regla de compra especial; **C12 programado y confirmado en el registro**; asistente en **Node 22** (PM2 id 3); Gestor técnicamente activo pero **sin usuarias asignadas** (`manager` quitado a `admin`); respaldo diario verificado, exclusión de `gestor.db*` en el `tar` y cron `10 8 * * *` del respaldo del Gestor; `GESTOR_LLAVE` propia (rotada). **Producción NO tiene aún** las Entregas 17, 17b y 17c.
 
-**Estado del servidor de pruebas:** sigue con el C12 simulado vigente (ver `GUIA_DESPLIEGUE_Y_ACTUALIZACION.md`, sección 7).
+**Pruebas (servidor de pruebas, con el C12 simulado vigente):** Entregas 15 a 17c instaladas: pantallas del Gestor, respaldo/restauración, **redacción asistida de mensajes** (seguimiento, recordatorio y respuesta; estilos Cercano, Formal, Breve y Entusiasta; **«Mi estilo»** cifrado), verificación de largo, emojis, datos personales, importes y **promesas no escritas por la asesora**, **tope mensual de 10 USD** de gasto de IA, esquema de `gestor.db` **versión 2** (migrado el 4 nov con respaldo previo). 300 pruebas automáticas, 22+ de navegador. Costo real medido: ~0,0003 USD por borrador.
 
 **Lista pendiente (en este orden):**
-1. **7 u 8 nov:** 3 consultas con el C12 en producción (producto normal, 2 x 1 y 60099) y banner "C12 2026"; luego `node scripts/cargar-campana.js --promover --aplicar` en `/opt/yanbal-assistant` (con su frase de autorización). Nota: producción corre con Node 22 desde el 4 nov.
-2. **Revisión legal del consentimiento del Gestor** (habeas data, Ley 1581): **bloquea la Fase B** (asignar el módulo `manager` a usuarias y guardar clientas reales).
-3. **Fase B:** asignar `manager` a las usuarias elegidas desde el módulo Usuarios, tras la aprobación legal.
-4. Redacción asistida por IA en el Gestor (decisión aparte de privacidad, costos y límites).
-5. Limpieza (con autorización; borrado en mensaje aparte): `/root/asistente-v2-pruebas/practica-restauracion`, `/root/asistente-v2-pruebas/respaldos-gestor-prueba`, copias `v3-antes-*`, `/root/prueba-node22.log`, `/root/panel-staging/`, `known_hosts`. Volver el servidor de pruebas a su arranque normal.
-6. Seguridad pendiente: Nginx (`autorizo nginx`), 60 actualizaciones (sin pasar a Ubuntu 26.04), `gratitud` y `yanbal-admin` siguen en Node 18 sin soporte, hallazgos A y B del panel, `campana.json` y `catalogo.json` de producción en 644, carpeta `baseline-20261026` en 755, renovar la API key antes del 30 abr 2027.
-7. Mejoras anotadas: acceso de inicio de sesión visible desde la pantalla de inicio; tipo de letra de las pestañas del Gestor; categoría de 60124 corregible con `--correcciones`.
+1. **Probar «Mi estilo» con mensajes suyos reales** (sin datos de clientas) y juzgar si el borrador suena a la usuaria; ajustar instrucciones si no. Confirmar si la ficha «Sara Buitrago» de pruebas es una persona real (si lo es, borrarla: el modelo real ya recibió sus notas enmascaradas).
+2. **Subir el límite de gasto de la organización en la consola de Anthropic a 10 USD o más** (hoy 3 USD): la usuaria lo cambia en la consola.
+3. **7 u 8 nov:** 3 consultas con el C12 en producción (producto normal, 2 x 1 y 60099) y banner "C12 2026"; luego `node scripts/cargar-campana.js --promover --aplicar` en `/opt/yanbal-assistant` (producción corre con Node 22).
+4. **Revisión legal del consentimiento del Gestor** (habeas data, Ley 1581), incluido el proveedor de IA en el exterior: **bloquea la Fase B** (asignar `manager` y guardar clientas reales) y el paso de las Entregas 15 a 17c a producción con datos reales.
+5. **Llevar las Entregas 17 a 17c a producción** (cuando se decida): paquete nuevo con `HASH_ACTUAL` de `server.js` de producción (hoy `21f6d973…`; el del paquete 17c es distinto y se imprime al final de `actualizar.sh`); **respaldo previo de `gestor.db` con `respaldar-gestor.js` antes del reinicio**, porque la migración 1 a 2 ocurre al arrancar; el módulo `manager` sigue sin asignarse hasta la Fase B.
+6. Limpieza (con autorización; borrado en mensaje aparte): `/root/asistente-v2-pruebas/practica-restauracion`, `/root/asistente-v2-pruebas/respaldos-gestor-prueba`, copias `v3-antes-*`, `/root/prueba-node22.log`, `/root/panel-staging/`, `known_hosts`; volver el servidor de pruebas a su arranque normal.
+7. Seguridad pendiente: Nginx (`autorizo nginx`), 60 actualizaciones (sin pasar a Ubuntu 26.04), `gratitud` y `yanbal-admin` siguen en Node 18 sin soporte, hallazgos A y B del panel, `campana.json` y `catalogo.json` de producción en 644, carpeta `baseline-20261026` en 755, renovar la API key antes del 30 abr 2027.
+8. Mejoras anotadas: acceso de inicio de sesión visible desde la pantalla de inicio; categoría de 60124 corregible con `--correcciones`; versión 2 de la redacción con catálogo y precios verificados.
 
-**Pendientes de la usuaria:** guardar `GESTOR_LLAVE` de producción (nueva) en el gestor de contraseñas si aún no lo hizo; copia fuera del PC de `isamor_ed25519` y su passphrase; `ADMIN_USER`/`ADMIN_PASSWORD` del panel y la clave de `admin` del asistente en el gestor de contraseñas; descargar `baseline-20261026`; instantáneas en hPanel; desglose de **Costo** de la consola de Anthropic (~0,43 USD sin explicar); `chmod 600` a `data/gestor.db*` en pruebas; verificar que el repositorio de GitHub sea privado.
+**Pendientes de la usuaria:** guardar `GESTOR_LLAVE` de producción (la nueva) en el gestor de contraseñas; copia fuera del PC de `isamor_ed25519` y su passphrase; claves de `ADMIN_USER`/`ADMIN_PASSWORD` del panel y de `admin` del asistente en el gestor de contraseñas; descargar `baseline-20261026`; instantáneas en hPanel; desglose de **Costo** de la consola de Anthropic (~0,43 USD sin explicar); `chmod 600` a `data/gestor.db*` en pruebas (ya aparecen en 600); verificar que el repositorio de GitHub sea privado.
 
 ### Regla de negocio: compra especial (aprobada por la usuaria el 2 nov 2026)
 Un artículo cuya promoción empieza por "Compra especial", con precio de oferta y sin precio normal, solo se adquiere con la compra de un producto y **no se vende suelto**. Cada vez que el asistente o el Estudio de contenido citen su precio deben aclararlo en el mismo texto; el código lo verifica (`verificarCompraEspecial`) y, si falta, entrega la ficha del catálogo, que siempre lo dice.

@@ -252,3 +252,59 @@ test('tope mensual: al llegar al tope la redacción y el chat responden 503 limi
     assert.deepEqual([r.estado, r.json.gasto], [200, null]);
   });
 });
+
+const estiloApi = (llamar, cookie, metodo = 'GET', cuerpo, extra = {}) => llamar({ metodo, ruta: '/api/gestor/estilo', cuerpo, cookie, ...extra });
+
+test('Mi estilo API: guardar, leer y quitar; cada usuaria el suyo; la administradora no lee el de otra (ni con ?duena=)', conSqlite, async () => {
+  await conServidor({}, async ({ llamar, entrar }) => {
+    const ana = await entrar('ana'), bea = await entrar('bea'), jefa = await entrar('jefa');
+    assert.deepEqual((await estiloApi(llamar, ana)).json, { ejemplos: [], actualizado: null });
+    const g = await estiloApi(llamar, ana, 'PUT', { ejemplos: ['Hola linda 💖', 'Holaa, ¿todo bien?'] });
+    assert.equal(g.estado, 200);
+    assert.deepEqual([g.json.ejemplos, g.json.enmascarados], [['Hola linda 💖', 'Holaa, ¿todo bien?'], false]);
+    assert.equal((await estiloApi(llamar, ana)).json.ejemplos.length, 2);
+    assert.deepEqual((await estiloApi(llamar, bea)).json.ejemplos, []);
+    assert.deepEqual((await estiloApi(llamar, jefa)).json.ejemplos, []);
+    const otra = await llamar({ ruta: '/api/gestor/estilo?duena=ana', cookie: jefa });
+    assert.deepEqual(otra.json.ejemplos, [], 'el parámetro duena no abre el de otra usuaria');
+    assert.deepEqual((await estiloApi(llamar, ana, 'DELETE')).json, { ok: true });
+    assert.deepEqual((await estiloApi(llamar, ana)).json.ejemplos, []);
+  });
+});
+
+test('Mi estilo API: enmascara datos personales, valida límites, exige módulo y origen', conSqlite, async () => {
+  await conServidor({}, async ({ llamar, entrar }) => {
+    const ana = await entrar('ana');
+    const m = await estiloApi(llamar, ana, 'PUT', { ejemplos: ['Escríbeme al 300 123 4567'] });
+    assert.deepEqual([m.json.ejemplos, m.json.enmascarados], [['Escríbeme al [TELÉFONO]'], true]);
+    for (const cuerpo of [{}, { ejemplos: 'x' }, { ejemplos: [] }, { ejemplos: ['a', 'b', 'c', 'd'] }, { ejemplos: ['x'.repeat(501)] }]) {
+      const r = await estiloApi(llamar, ana, 'PUT', cuerpo);
+      assert.deepEqual([r.estado, r.json.codigo], [400, 'ejemplos_invalidos'], JSON.stringify(cuerpo).slice(0, 40));
+    }
+    assert.equal((await estiloApi(llamar, ana)).json.ejemplos[0], 'Escríbeme al [TELÉFONO]', 'los intentos inválidos no tocan lo guardado');
+    assert.equal((await estiloApi(llamar, undefined)).estado, 401);
+    const sin = await estiloApi(llamar, await entrar('sinmodulo'));
+    assert.deepEqual([sin.estado, sin.json.codigo], [403, 'modulo_no_permitido']);
+    for (const metodo of ['PUT', 'DELETE']) {
+      assert.equal((await estiloApi(llamar, ana, metodo, { ejemplos: ['x'] }, { origen: 'https://malo.example' })).estado, 403, metodo);
+    }
+  });
+});
+
+test('Mi estilo API: redactar con estilo «mio» envía los ejemplos al modelo; sin ejemplos da 400 y no llama a la IA', conSqlite, async () => {
+  await conServidor({}, async ({ llamar, entrar, cuerpos }) => {
+    const cookie = await entrar('ana');
+    const id = await crear(llamar, cookie);
+    const sin = await redactar(llamar, cookie, id, { tipo: 'seguimiento', estilo: 'mio' });
+    assert.deepEqual([sin.estado, sin.json.codigo], [400, 'sin_ejemplos']);
+    assert.equal(cuerpos.length, 0);
+    await estiloApi(llamar, cookie, 'PUT', { ejemplos: ['Hola linda, ¿cómo vas? 💖', 'Quedo pendiente 🌸'] });
+    const r = await redactar(llamar, cookie, id, { tipo: 'seguimiento', estilo: 'mio' });
+    assert.equal(r.estado, 200);
+    assert.match(cuerpos[0].messages[0].content, /<mis_mensajes>\n1\) Hola linda, ¿cómo vas\? 💖\n2\) Quedo pendiente 🌸\n<\/mis_mensajes>/);
+    // los ejemplos de ana no llegan a otra usuaria
+    const bea = await entrar('bea');
+    const idBea = await crear(llamar, bea);
+    assert.equal((await redactar(llamar, bea, idBea, { tipo: 'seguimiento', estilo: 'mio' })).json.codigo, 'sin_ejemplos');
+  });
+});

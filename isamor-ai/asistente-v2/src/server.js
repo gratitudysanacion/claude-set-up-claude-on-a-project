@@ -228,6 +228,14 @@ function crearServidor({
         const cuerpo = await leerJson(req, MAX_GESTOR_BYTES);
         return enviarJson(res, 200, gestor.completarRecordatorio(ctx, partes[1], cuerpo.hecho !== false));
       }
+      if (partes[0] === 'estilo' && partes.length === 1) {   // «Mi estilo»: solo la propia usuaria
+        if (metodo === 'GET') return enviarJson(res, 200, gestor.obtenerEstilo(ctx));
+        if (metodo === 'PUT') {
+          const c = await leerJson(req, MAX_GESTOR_BYTES);
+          return enviarJson(res, 200, gestor.guardarEstilo(ctx, c.ejemplos));
+        }
+        if (metodo === 'DELETE') return enviarJson(res, 200, gestor.borrarEstilo(ctx));
+      }
       if (partes[0] === 'clientas') {
         if (partes.length === 1 && metodo === 'GET') {
           return enviarJson(res, 200, gestor.listar(ctx, { etapa: q.get('etapa') || undefined, q: q.get('q') || undefined, limite: q.get('limite'), desplazamiento: q.get('desplazamiento'), duena }));
@@ -243,11 +251,15 @@ function crearServidor({
           if (!redactor) return enviarJson(res, 503, { error: 'La redacción con IA no está disponible en este momento.', codigo: 'ia_no_disponible' });
           if (gasto && gasto.estado().bloqueado) return enviarJson(res, 503, MENSAJE_LIMITE_MENSUAL);
           const clienta = gestor.obtener(ctx, id, {});   // solo fichas propias: la administradora tampoco redacta sobre las de otra usuaria
+          const ejemplos = solicitud.estilo === 'mio' ? gestor.obtenerEstilo(ctx).ejemplos : [];
+          if (solicitud.estilo === 'mio' && !ejemplos.length) {
+            return enviarJson(res, 400, { error: 'Primero guarda tus mensajes de ejemplo en «Mi estilo».', codigo: 'sin_ejemplos' });
+          }
           const lim = limitesRedaccion.consumir(usuario);
           if (!lim.ok) {
             return enviarJson(res, 429, { error: lim.motivo === 'dia' ? 'Alcanzaste el límite diario de borradores.' : 'Demasiados borradores seguidos. Espera un momento.' }, { 'Retry-After': String(lim.retryAfterS) });
           }
-          const r = await redactor({ clienta, ...solicitud });
+          const r = await redactor({ clienta, ejemplos, ...solicitud });
           if (gasto) gasto.registrar(r.uso);
           // Solo metadatos: nunca las notas, el mensaje de la clienta ni el borrador.
           log({ t: new Date(ahora()).toISOString(), evento: 'redactar', usuario, tipo: solicitud.tipo, ...r.uso, caracteres: r.borrador.length, respaldo: r.respaldo, motivo: r.motivo });

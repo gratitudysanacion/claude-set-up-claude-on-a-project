@@ -317,14 +317,50 @@
       ...ESTILOS.map(([id, rotuloEstilo]) => el('option', { value: id, texto: rotuloEstilo })));
     try { const guardado = localStorage.getItem('mg-estilo'); if (ESTILOS.some(e => e[0] === guardado)) estilo.value = guardado; } catch { /* sin almacenamiento: queda el predeterminado */ }
     estilo.addEventListener('change', () => { try { localStorage.setItem('mg-estilo', estilo.value); } catch { /* no es indispensable */ } });
+    // «Mi estilo»: la opción aparece cuando la usuaria guardó mensajes de ejemplo.
+    const opcionMio = el('option', { value: 'mio', texto: 'Mi estilo (imita mis mensajes)' });
+    const hayEstilo = on => {
+      if (on && !opcionMio.parentNode) estilo.append(opcionMio);
+      if (!on && opcionMio.parentNode) { if (estilo.value === 'mio') estilo.value = 'cercano'; opcionMio.remove(); }
+    };
+    const ejemplosEstilo = [1, 2, 3].map(n => el('textarea', { id: `mg-estilo-${n}`, maxlength: '500', rows: '3', 'aria-label': `Mensaje de ejemplo ${n}`, placeholder: n === 1 ? 'Pega aquí un mensaje tuyo real' : 'Otro mensaje tuyo (opcional)' }));
+    const estadoEstilo = el('div', { id: 'mg-estilo-estado', clase: 'mg-mensaje hidden', role: 'status' });
+    const cargarEstilo = ejemplos => ejemplosEstilo.forEach((t, i) => { t.value = ejemplos[i] || ''; });
+    const guardarMiEstilo = el('button', { type: 'button', clase: 'secondary', id: 'mg-estilo-guardar', texto: 'Guardar mi estilo', alClick: async () => {
+      const r = await llamar('/api/gestor/estilo', { metodo: 'PUT', cuerpo: { ejemplos: ejemplosEstilo.map(t => t.value) } });
+      if (r.estado === 401) { S.alSesionVencida(); return; }
+      if (r.estado !== 200) { mostrarEstado(estadoEstilo, (r.datos && r.datos.error) || 'No se pudo guardar tu estilo.', 'error'); return; }
+      cargarEstilo(r.datos.ejemplos); hayEstilo(true); estilo.value = 'mio';
+      try { localStorage.setItem('mg-estilo', 'mio'); } catch { /* no es indispensable */ }
+      mostrarEstado(estadoEstilo, r.datos.enmascarados ? 'Guardado. Reemplacé teléfonos, correos o direcciones por marcas: no pegues datos de clientas.' : 'Guardado. Ya puedes redactar con «Mi estilo».', r.datos.enmascarados ? 'aviso' : 'ok');
+    } });
+    const quitarMiEstilo = el('button', { type: 'button', clase: 'secondary', id: 'mg-estilo-quitar', texto: 'Quitar mi estilo', alClick: async () => {
+      const r = await llamar('/api/gestor/estilo', { metodo: 'DELETE' });
+      if (r.estado === 401) { S.alSesionVencida(); return; }
+      if (r.estado !== 200) { mostrarEstado(estadoEstilo, 'No se pudo quitar tu estilo.', 'error'); return; }
+      cargarEstilo([]); hayEstilo(false);
+      try { localStorage.setItem('mg-estilo', estilo.value); } catch { /* no es indispensable */ }
+      mostrarEstado(estadoEstilo, 'Listo: tus mensajes de ejemplo se borraron.', 'ok');
+    } });
+    const detalleEstilo = el('details', { clase: 'mg-estilo', id: 'mg-estilo-detalle' },
+      el('summary', { texto: 'Mi estilo (opcional): que suene como tú' }),
+      el('p', { clase: 'mg-consent-info', texto: 'Pega 1 a 3 mensajes tuyos reales (hasta 500 caracteres cada uno), sin datos de clientas. Se guardan cifrados, solo tú los usas y la IA los lee para imitar tu manera de escribir.' }),
+      ...ejemplosEstilo.map((t, i) => el('label', { clase: 'mg-campo', for: t.id }, el('span', { texto: `Ejemplo ${i + 1}` }), t)),
+      el('div', { clase: 'mg-acciones' }, guardarMiEstilo, quitarMiEstilo), estadoEstilo);
+    llamar('/api/gestor/estilo').then(r => {
+      if (r.estado !== 200 || !r.datos.ejemplos || !r.datos.ejemplos.length) return;
+      cargarEstilo(r.datos.ejemplos); hayEstilo(true);
+      try { if (localStorage.getItem('mg-estilo') === 'mio') estilo.value = 'mio'; } catch { /* sin almacenamiento */ }
+    }).catch(() => { /* sin conexión: queda sin «Mi estilo» */ });
     const mensaje = el('textarea', { id: 'mg-red-mensaje', maxlength: '800', rows: '3', placeholder: 'Pega aquí el mensaje de la clienta' });
-    const indic = el('input', { id: 'mg-red-indic', type: 'text', maxlength: '300', placeholder: 'Indicaciones (opcional). Ej.: dile que el pedido llega el viernes' });
+    const indic = el('input', { id: 'mg-red-indic', type: 'text', maxlength: '300', placeholder: 'Opcional. Ej.: el pedido llega el viernes' });
     const cajaMensaje = el('label', { clase: 'mg-campo hidden', id: 'mg-red-caja-mensaje', for: 'mg-red-mensaje' }, el('span', { texto: 'Mensaje de la clienta' }), mensaje);
     tipo.addEventListener('change', () => mostrarNodo(cajaMensaje, tipo.value === 'respuesta'));
     const estado = el('div', { id: 'mg-red-estado', clase: 'mg-mensaje hidden', role: 'status' });
     const borrador = el('textarea', { id: 'mg-red-borrador', rows: '5', maxlength: '2000', 'aria-label': 'Borrador del mensaje (puedes editarlo)' });
     const resultado = el('div', { id: 'mg-red-resultado', clase: 'hidden' },
       el('label', { clase: 'mg-campo', for: 'mg-red-borrador' }, el('span', { texto: 'Borrador (puedes editarlo antes de copiarlo)' }), borrador),
+      el('p', { clase: 'mg-consent-info', id: 'mg-red-revisa', texto: 'Revisa que no prometa nada que no puedas cumplir (regalos, descuentos, fechas): el compromiso final es tuyo.' }),
       el('div', { clase: 'mg-acciones' },
         el('button', { type: 'button', clase: 'primary', id: 'mg-red-copiar', texto: 'Copiar', alClick: () => copiar(borrador, estado) }),
         el('button', { type: 'button', clase: 'secondary', id: 'mg-red-otra', texto: 'Redactar otra versión', alClick: () => ir.click() })));
@@ -355,7 +391,7 @@
         el('label', { clase: 'mg-campo', for: 'mg-red-tipo' }, el('span', { texto: 'Tipo de mensaje' }), tipo),
         el('label', { clase: 'mg-campo', for: 'mg-red-estilo' }, el('span', { texto: 'Estilo' }), estilo),
         el('label', { clase: 'mg-campo', for: 'mg-red-indic' }, el('span', { texto: 'Indicaciones' }), indic)),
-      cajaMensaje, el('div', { clase: 'mg-acciones' }, ir), estado, resultado);
+      detalleEstilo, cajaMensaje, el('div', { clase: 'mg-acciones' }, ir), estado, resultado);
   }
   function mostrarEstado(caja, texto, tipo) {
     caja.textContent = texto;

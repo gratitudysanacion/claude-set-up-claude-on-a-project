@@ -43,7 +43,7 @@ test('respaldar: copia consistente, verificada, 600 en carpeta 700, sin datos pe
     const copias = fs.readdirSync(destino);
     assert.equal(copias.length, 1, 'no deben quedar temporales');
     assert.equal(modo(path.join(destino, copias[0])), '600');
-    assert.deepEqual(verificarCopia(path.join(destino, copias[0])), { clientas: 3, version: 1 });
+    assert.deepEqual(verificarCopia(path.join(destino, copias[0])), { clientas: 3, version: 2 });
     db.close();
   } finally { fs.rmSync(dir, { recursive: true, force: true }); }
 });
@@ -214,7 +214,7 @@ test('verificarCopia: detecta una copia con páginas alteradas aunque se pueda a
     const { DatabaseSync } = require('node:sqlite');
     const ruta = path.join(dir, 'c.db');
     const db = new DatabaseSync(ruta);
-    db.exec('PRAGMA user_version = 1; CREATE TABLE clientas (id INTEGER PRIMARY KEY, a TEXT); CREATE INDEX ix ON clientas (a);');
+    db.exec('PRAGMA user_version = 2; CREATE TABLE clientas (id INTEGER PRIMARY KEY, a TEXT); CREATE INDEX ix ON clientas (a);');
     db.exec('CREATE TABLE historial_etapas (x); CREATE TABLE recordatorios (x); CREATE TABLE accesos (x);');
     const ins = db.prepare('INSERT INTO clientas (a) VALUES (?)');
     for (let i = 0; i < 3000; i++) ins.run(`valor-${i}-${'z'.repeat(40)}`);

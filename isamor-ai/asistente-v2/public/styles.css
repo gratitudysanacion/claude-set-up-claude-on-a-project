@@ -821,3 +821,9 @@ button.mg-kpi:hover { border-color: var(--gold); }
 .mg-pestana { font-size: 13px; padding: 0 16px; min-height: 40px; }
 .mg-borrar { font-size: 12px; }
 .mg-kpi-titulo { font-size: 12px; }
+
+/* Mi estilo (redacción asistida) */
+.mg-estilo { border: 1px dashed var(--gold); border-radius: 10px; padding: 10px 14px; background: white; }
+.mg-estilo > summary { cursor: pointer; font-size: 13px; font-weight: 600; color: var(--wine-dark); }
+.mg-estilo[open] { display: grid; gap: 10px; }
+.mg-estilo textarea { width: 100%; padding: 10px 13px; border: 1px solid #e5d9e1; border-radius: 10px; font: inherit; font-size: 14px; line-height: 1.5; resize: vertical; }

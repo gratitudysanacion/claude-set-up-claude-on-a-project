@@ -9,6 +9,7 @@
 const crypto = require('node:crypto');
 const fs = require('node:fs');
 const { fechaColombia } = require('./reglas');
+const { enmascarar } = require('./enmascarar');
 
 const ETAPAS = ['nueva', 'contactada', 'interesada', 'pedido_en_curso', 'cliente', 'recompra', 'inactiva'];
 const ETAPAS_ROTULO = {
@@ -20,6 +21,7 @@ const TEXTO_CONSENTIMIENTO = 'Confirmo que la persona autorizó guardar sus dato
   + 'para atención comercial; que sus notas pueden procesarse con inteligencia artificial de un proveedor ubicado en el exterior, '
   + 'sin su teléfono, cédula ni dirección; y que el administrador de la plataforma puede acceder a ellos para dar soporte.';
 
+const LIMITES_ESTILO = { ejemplos: 3, caracteres: 500, total: 1200 };
 const LIMITES = { nombre: 120, direccion: 200, notas: 2000, recordatorio: 200, clientasPorUsuaria: 5000, pagina: 100, diasSinMovimiento: 30 };
 
 function error(codigo, mensaje) {
@@ -47,7 +49,7 @@ function abrirBase(ruta) {
   db.exec('PRAGMA journal_mode = WAL; PRAGMA foreign_keys = ON; PRAGMA secure_delete = ON;');
   // Los archivos auxiliares que ya existieran (p. ej. tras un apagado brusco) conservan su permiso anterior: se corrige.
   if (ruta !== ':memory:') for (const sufijo of ['-wal', '-shm']) if (fs.existsSync(ruta + sufijo)) fs.chmodSync(ruta + sufijo, 0o600);
-  const version = db.prepare('PRAGMA user_version').get().user_version;
+  let version = db.prepare('PRAGMA user_version').get().user_version;
   if (version < 1) {
     db.exec(`
       BEGIN;
@@ -88,6 +90,19 @@ function abrirBase(ruta) {
         fecha TEXT NOT NULL, actor TEXT NOT NULL, duena TEXT NOT NULL, accion TEXT NOT NULL, clienta_id TEXT
       );
       PRAGMA user_version = 1;
+      COMMIT;`);
+    version = 1;
+  }
+  if (version < 2) {
+    // «Mi estilo» (4 nov 2026): hasta 3 mensajes de ejemplo de la usuaria para que la redacción asistida imite su voz. Cifrados.
+    db.exec(`
+      BEGIN;
+      CREATE TABLE IF NOT EXISTS estilos (
+        usuaria TEXT PRIMARY KEY,
+        ejemplos_cif TEXT NOT NULL,
+        actualizado TEXT NOT NULL
+      );
+      PRAGMA user_version = 2;
       COMMIT;`);
   }
   return db;
@@ -266,6 +281,41 @@ function crearGestor({ db, cifrado, ahora = () => Date.now(), nuevoId = () => cr
     return { ok: true };
   }
 
+  // ---- Mi estilo (solo la propia usuaria; nadie más lo lee ni lo modifica por la API) ----
+  const ctxEstilo = duena => ctxDato(duena, 'estilo', 'ejemplos');
+
+  function obtenerEstilo(ctx) {
+    const duena = resolverDuena(ctx, {});
+    const fila = db.prepare('SELECT ejemplos_cif, actualizado FROM estilos WHERE usuaria = ?').get(duena);
+    if (!fila) return { ejemplos: [], actualizado: null };
+    return { ejemplos: JSON.parse(cifrado.descifrar(fila.ejemplos_cif, ctxEstilo(duena))), actualizado: fila.actualizado };
+  }
+
+  // ejemplos: 1 a 3 textos de hasta 500 caracteres (1.200 en total). Se enmascaran antes de guardar: si traían teléfonos, cédulas,
+  // correos o direcciones, quedan como marcas y se informa con `enmascarados: true`.
+  function guardarEstilo(ctx, ejemplos) {
+    const duena = resolverDuena(ctx, {}, { escritura: true });
+    if (!Array.isArray(ejemplos) || ejemplos.some(e => typeof e !== 'string')) throw error('ejemplos_invalidos', 'Los ejemplos deben ser una lista de textos.');
+    const limpios = ejemplos.map(e => e.trim()).filter(Boolean);
+    if (!limpios.length) throw error('ejemplos_invalidos', 'Escribe al menos un mensaje de ejemplo.');
+    if (limpios.length > LIMITES_ESTILO.ejemplos) throw error('ejemplos_invalidos', `Máximo ${LIMITES_ESTILO.ejemplos} mensajes de ejemplo.`);
+    if (limpios.some(e => e.length > LIMITES_ESTILO.caracteres)) throw error('ejemplos_invalidos', `Cada ejemplo puede tener hasta ${LIMITES_ESTILO.caracteres} caracteres.`);
+    if (limpios.reduce((n, e) => n + e.length, 0) > LIMITES_ESTILO.total) throw error('ejemplos_invalidos', `Entre todos los ejemplos, máximo ${LIMITES_ESTILO.total} caracteres.`);
+    const guardados = limpios.map(e => enmascarar(e));
+    const enmascarados = guardados.some((g, i) => g !== limpios[i]);
+    const t = iso();
+    db.prepare(`INSERT INTO estilos (usuaria, ejemplos_cif, actualizado) VALUES (?, ?, ?)
+      ON CONFLICT(usuaria) DO UPDATE SET ejemplos_cif = excluded.ejemplos_cif, actualizado = excluded.actualizado`)
+      .run(duena, cifrado.cifrar(JSON.stringify(guardados), ctxEstilo(duena)), t);
+    return { ejemplos: guardados, actualizado: t, enmascarados };
+  }
+
+  function borrarEstilo(ctx) {
+    const duena = resolverDuena(ctx, {}, { escritura: true });
+    db.prepare('DELETE FROM estilos WHERE usuaria = ?').run(duena);
+    return { ok: true };
+  }
+
   // Todo lo guardado de una clienta, descifrado, para entregárselo a su titular si lo pide.
   function exportar(ctx, id, { duena: otra } = {}) {
     const duena = resolverDuena(ctx, { duena: otra });
@@ -337,11 +387,11 @@ function crearGestor({ db, cifrado, ahora = () => Date.now(), nuevoId = () => cr
   }
 
   return {
-    crearClienta, listar, obtener, actualizar, borrar, exportar,
+    crearClienta, listar, obtener, actualizar, borrar, exportar, obtenerEstilo, guardarEstilo, borrarEstilo,
     crearRecordatorio, completarRecordatorio, listarRecordatorios, indicadores, consultarAccesos
   };
 }
 
 module.exports = {
-  crearGestor, abrirBase, sqliteDisponible, ETAPAS, ETAPAS_ROTULO, TEXTO_CONSENTIMIENTO, CONSENTIMIENTO_VERSION, LIMITES
+  crearGestor, abrirBase, sqliteDisponible, ETAPAS, ETAPAS_ROTULO, TEXTO_CONSENTIMIENTO, CONSENTIMIENTO_VERSION, LIMITES, LIMITES_ESTILO
 };

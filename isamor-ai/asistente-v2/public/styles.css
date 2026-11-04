@@ -816,3 +816,8 @@ button.mg-kpi:hover { border-color: var(--gold); }
 .mg-redactar select, .mg-redactar input[type="text"] { min-height: 44px; padding-top: 0; padding-bottom: 0; }
 .mg-redactar textarea:focus, .mg-redactar select:focus, .mg-redactar input:focus { border-color: var(--wine); box-shadow: 0 0 0 3px rgba(244, 119, 33, .12); }
 .mg-mensaje.aviso { border-color: #ead9b9; color: #745526; background: #fffaf0; }
+
+/* Los botones del Gestor heredaban el tamaño del cuerpo (16 px) y se veían más grandes que el resto de los controles (12 a 13 px). */
+.mg-pestana { font-size: 13px; padding: 0 16px; min-height: 40px; }
+.mg-borrar { font-size: 12px; }
+.mg-kpi-titulo { font-size: 12px; }

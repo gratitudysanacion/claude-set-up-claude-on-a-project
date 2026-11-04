@@ -2,7 +2,7 @@
 // Redacción asistida de mensajes: qué ve el modelo, verificación del borrador, reintento y plantilla de respaldo.
 const test = require('node:test');
 const assert = require('node:assert/strict');
-const { crearRedactor, validarSolicitud, armarMensaje, verificarBorrador, plantillaFija, SISTEMA_REDACCION, PLANTILLAS, TIPOS } = require('../src/redaccion');
+const { crearRedactor, validarSolicitud, armarMensaje, verificarBorrador, plantillaFija, SISTEMA_REDACCION, PLANTILLAS, PLANTILLAS_USTED, TIPOS, ESTILOS, ESTILO_POR_DEFECTO } = require('../src/redaccion');
 
 const clienta = {
   nombre: 'María Fernanda Gómez Ruiz', telefono: '3001234567', cedula: '1020304050', direccion: 'Calle 45 #12-34 apto 301',
@@ -23,8 +23,8 @@ function modelo(respuestas) {
 }
 
 test('validarSolicitud: tipo obligatorio, límites de largo, tipos de dato y respuesta exige el mensaje de la clienta', () => {
-  assert.deepEqual(validarSolicitud({ tipo: 'seguimiento' }), { tipo: 'seguimiento', mensajeClienta: '', indicaciones: '' });
-  assert.deepEqual(validarSolicitud({ tipo: 'respuesta', mensaje_clienta: ' ¿Cuánto vale? ', indicaciones: ' sí ' }), { tipo: 'respuesta', mensajeClienta: '¿Cuánto vale?', indicaciones: 'sí' });
+  assert.deepEqual(validarSolicitud({ tipo: 'seguimiento' }), { tipo: 'seguimiento', estilo: 'cercano', mensajeClienta: '', indicaciones: '' });
+  assert.deepEqual(validarSolicitud({ tipo: 'respuesta', mensaje_clienta: ' ¿Cuánto vale? ', indicaciones: ' sí ' }), { tipo: 'respuesta', estilo: 'cercano', mensajeClienta: '¿Cuánto vale?', indicaciones: 'sí' });
   const falla = (c, re) => assert.throws(() => validarSolicitud(c), e => e.codigo === 'solicitud_invalida' && re.test(e.message));
   falla(null, /tipo de mensaje/);
   falla({}, /tipo de mensaje/);
@@ -193,4 +193,62 @@ test('redactar: el texto del modelo se limpia (comillas, asteriscos) y una respu
 
 test('crearRedactor: sin llave ni cliente devuelve null (el servidor responde "IA no disponible")', () => {
   assert.equal(crearRedactor({ apiKey: '' }), null);
+});
+
+test('estilos: la lista es cerrada, el cercano es el predeterminado y un estilo inválido se rechaza', () => {
+  assert.deepEqual(Object.keys(ESTILOS), ['cercano', 'formal', 'breve', 'entusiasta']);
+  assert.equal(ESTILO_POR_DEFECTO, 'cercano');
+  assert.equal(validarSolicitud({ tipo: 'seguimiento', estilo: 'formal' }).estilo, 'formal');
+  assert.equal(validarSolicitud({ tipo: 'seguimiento', estilo: null }).estilo, 'cercano');
+  for (const malo of ['otro', '', '__proto__', 'toString', 5, {}]) {
+    assert.throws(() => validarSolicitud({ tipo: 'seguimiento', estilo: malo }), e => e.codigo === 'solicitud_invalida' && /estilo/.test(e.message), String(malo));
+  }
+});
+
+test('estilos: el modelo recibe la descripción del estilo elegido y el cercano si no se indica', () => {
+  assert.match(armarMensaje({ clienta, tipo: 'seguimiento' }), /Estilo: Tono cercano y cálido, tuteando, de máximo 70 palabras/);
+  assert.match(armarMensaje({ clienta, tipo: 'seguimiento', estilo: 'formal' }), /Estilo: Tono formal y respetuoso, tratando de usted, sin emojis/);
+  assert.match(armarMensaje({ clienta, tipo: 'seguimiento', estilo: 'breve' }), /máximo 35 palabras/);
+  assert.match(armarMensaje({ clienta, tipo: 'seguimiento', estilo: 'entusiasta' }), /máximo de tres emojis/);
+  assert.match(armarMensaje({ clienta, tipo: 'seguimiento', estilo: 'inexistente' }), /Estilo: Tono cercano/);
+  assert.match(SISTEMA_REDACCION, /línea «Estilo» del pedido/);
+});
+
+test('estilos: el código verifica el largo y los emojis de cada estilo', () => {
+  const v = (t, estilo) => verificarBorrador(t, { clienta, estilo });
+  const palabras = n => Array.from({ length: n }, () => 'ya').join(' ');
+  assert.ok(v(palabras(36), 'breve').ok, '36 palabras caben en breve por la tolerancia');
+  assert.ok(v(palabras(60), 'breve').violaciones.includes('demasiado_largo'));
+  assert.ok(v(palabras(60), 'cercano').ok);
+  assert.ok(v(palabras(100), 'cercano').violaciones.includes('demasiado_largo'));
+  assert.ok(v(palabras(100), 'entusiasta').ok);
+  assert.ok(v(palabras(120), 'entusiasta').violaciones.includes('demasiado_largo'));
+  assert.ok(v('Hola María 😊 qué gusto', 'cercano').ok);
+  assert.ok(v('Hola 😊 María 🌸 y 🎉', 'cercano').violaciones.includes('demasiados_emojis'));
+  assert.ok(v('Buen día, María 😊', 'formal').violaciones.includes('demasiados_emojis'));
+  assert.ok(v('Hola María 😊', 'breve').violaciones.includes('demasiados_emojis'));
+  assert.ok(v('¡Hola María! 🎉✨🌸', 'entusiasta').ok);
+  assert.ok(v('¡Hola María! 🎉✨🌸💖', 'entusiasta').violaciones.includes('demasiados_emojis'));
+});
+
+test('estilos: la plantilla fija trata de usted con el estilo formal y siempre pasa el verificador de su estilo', () => {
+  for (const estilo of Object.keys(ESTILOS)) {
+    for (const tipo of Object.keys(TIPOS)) {
+      const t = plantillaFija(tipo, clienta, estilo);
+      assert.deepEqual(verificarBorrador(t, { clienta, estilo }), { ok: true, violaciones: [] }, `${estilo}/${tipo}`);
+      assert.match(t, ESTILOS[estilo].trato === 'usted' ? /^Buen día, María\./ : /^Hola María,/);
+    }
+  }
+  assert.equal(Object.keys(PLANTILLAS_USTED).length, Object.keys(TIPOS).length);
+  assert.ok(!/\b(te|tu|tus|puedes|quieres)\b/i.test(plantillaFija('seguimiento', clienta, 'formal')), 'el trato formal no usa tú');
+});
+
+test('estilos: redactar con estilo formal envía su descripción y, si el modelo falla, entrega la plantilla de usted', async () => {
+  const { cliente, cuerpos } = modelo([dice('Hola María 😊 ¿cómo vas?'), dice('Hola María 😊 ¿cómo vas?')]);
+  const r = await crearRedactor({ cliente })({ clienta, tipo: 'seguimiento', estilo: 'formal' });
+  assert.match(cuerpos[0].messages[0].content, /Tono formal y respetuoso/);
+  assert.match(cuerpos[1].messages.at(-1).content, /Usa menos emojis/);
+  assert.deepEqual([r.respaldo, r.motivo], [true, 'demasiados_emojis']);
+  assert.equal(r.borrador, plantillaFija('seguimiento', clienta, 'formal'));
+  assert.match(r.borrador, /^Buen día, María\./);
 });

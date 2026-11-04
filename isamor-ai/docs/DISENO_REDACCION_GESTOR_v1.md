@@ -113,7 +113,7 @@ Enmascarado con textos reales de notas (teléfonos, cédulas, direcciones, corre
 1. Tipos de mensaje de la primera versión (lista propuesta en la sección 3).
 2. ¿Primera versión **sin precios** (recomendado) o ya con el catálogo?
 3. Límite diario por usuaria (propuesta: 30).
-4. Tono por defecto: cercano y cálido, tuteo, mensajes de un máximo de 60 palabras, con un cierre de una pregunta [Suponiendo]. Ajustable.
+4. Tono por defecto: cercano y cálido, tuteo, hasta 70 palabras, con un cierre de una pregunta [Suponiendo]. Ajustable.
 5. Visto bueno del abogado sobre el proveedor externo (condición para producción).
 
 ## 12. Implementación (Entrega 17, 4 nov 2026)

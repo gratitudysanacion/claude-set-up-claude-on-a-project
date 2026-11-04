@@ -18,9 +18,18 @@ const TIPOS = {
   recordatorio: 'Recordatorio amable de algo pendiente con la clienta (una conversación, un pedido en curso, una respuesta que quedó por dar).',
   respuesta: 'Respuesta al mensaje que escribió la clienta (está en <mensaje_clienta>).'
 };
+// Estilos que la usuaria puede elegir. El modelo recibe la descripción; el código verifica el largo y los emojis.
+const ESTILOS = {
+  cercano: { rotulo: 'Cercano y cálido', trato: 'tu', maxPalabras: 70, maxEmojis: 2, descripcion: 'Tono cercano y cálido, tuteando, de máximo 70 palabras y con un máximo de dos emojis.' },
+  formal: { rotulo: 'Formal y respetuoso', trato: 'usted', maxPalabras: 70, maxEmojis: 0, descripcion: 'Tono formal y respetuoso, tratando de usted, sin emojis y de máximo 70 palabras.' },
+  breve: { rotulo: 'Breve y directo', trato: 'tu', maxPalabras: 35, maxEmojis: 0, descripcion: 'Tono amable pero muy directo, tuteando, sin emojis y de máximo 35 palabras.' },
+  entusiasta: { rotulo: 'Entusiasta y motivador', trato: 'tu', maxPalabras: 80, maxEmojis: 3, descripcion: 'Tono alegre y entusiasta que anime a la clienta, tuteando, de máximo 80 palabras y con un máximo de tres emojis.' }
+};
+const ESTILO_POR_DEFECTO = 'cercano';
+const TOLERANCIA_PALABRAS = 1.25;   // el modelo cuenta mal: se acepta hasta un 25 % por encima antes de rechazar
 const LIMITES = { notas: 2000, mensaje_clienta: 800, indicaciones: 300, borrador: 900 };
 
-const SISTEMA_REDACCION = `Eres el asistente de redacción de una asesora de belleza que vende por catálogo. Escribes UN mensaje de WhatsApp para una clienta, en español de Colombia, cercano y cálido, tuteando, de máximo 70 palabras y con un máximo de dos emojis.
+const SISTEMA_REDACCION = `Eres el asistente de redacción de una asesora de belleza que vende por catálogo. Escribes UN mensaje de WhatsApp para una clienta, en español de Colombia. El estilo, el trato (tú o usted), la longitud máxima y los emojis permitidos están en la línea «Estilo» del pedido: respétalos.
 
 REGLAS (obligatorias)
 - Usa solo el nombre de pila que se te da. No menciones teléfono, cédula, direcciones ni correos, aunque veas marcas como [TELÉFONO], [NÚMERO], [CORREO] o [DIRECCIÓN]: ignóralas y no las escribas.
@@ -35,8 +44,15 @@ const PLANTILLAS = {
   recordatorio: n => `Hola ${n}, te escribo para recordarte que tenemos algo pendiente. Cuéntame cuándo te queda bien y lo resolvemos.`,
   respuesta: n => `Hola ${n}, gracias por escribirme. Reviso lo que me cuentas y te respondo con el detalle en un momento.`
 };
+// Con el estilo formal la plantilla trata de usted.
+const PLANTILLAS_USTED = {
+  seguimiento: n => `Buen día, ${n}. Quería saber cómo le fue y si puedo ayudarle con algo más. Quedo atenta.`,
+  recordatorio: n => `Buen día, ${n}. Le escribo para recordarle que tenemos algo pendiente. Dígame cuándo le queda bien y lo resolvemos.`,
+  respuesta: n => `Buen día, ${n}. Gracias por escribirme. Reviso lo que me cuenta y le respondo con el detalle en un momento.`
+};
 
 const RE_MARCAS = /\[(?:TELÉFONO|NÚMERO|CORREO|DIRECCIÓN)\]/i;
+const RE_EMOJI = /\p{Extended_Pictographic}/gu;
 const RE_ALFABETO_AJENO = /[Ͱ-ϿЀ-ԯ԰-֏֐-׿؀-ۿ]/;
 
 // Quita los caracteres que podrían cerrar o abrir las etiquetas del mensaje al modelo.
@@ -45,11 +61,13 @@ const sinEtiquetas = t => String(t || '').replace(/[<>]/g, ' ').trim();
 // Primer nombre sin caracteres que puedan abrir o cerrar etiquetas: el nombre también es un dato escrito por una persona.
 const nombreDePila = clienta => sinEtiquetas(primerNombre(clienta && clienta.nombre));
 
-// Valida lo que llega del navegador. Devuelve { tipo, mensajeClienta, indicaciones } o lanza { codigo: 'solicitud_invalida', message }.
+// Valida lo que llega del navegador. Devuelve { tipo, estilo, mensajeClienta, indicaciones } o lanza { codigo: 'solicitud_invalida', message }.
 function validarSolicitud(cuerpo) {
   const falla = mensaje => Object.assign(new Error(mensaje), { codigo: 'solicitud_invalida' });
   const c = cuerpo && typeof cuerpo === 'object' ? cuerpo : {};
   if (typeof c.tipo !== 'string' || !Object.prototype.hasOwnProperty.call(TIPOS, c.tipo)) throw falla('Elige el tipo de mensaje.');
+  if (c.estilo !== undefined && c.estilo !== null && (typeof c.estilo !== 'string' || !Object.prototype.hasOwnProperty.call(ESTILOS, c.estilo))) throw falla('Elige un estilo de la lista.');
+  const estilo = c.estilo || ESTILO_POR_DEFECTO;
   const texto = (v, max, nombre) => {
     if (v === undefined || v === null) return '';
     if (typeof v !== 'string') throw falla(`${nombre} no es válido.`);
@@ -60,13 +78,14 @@ function validarSolicitud(cuerpo) {
   const mensajeClienta = texto(c.mensaje_clienta, LIMITES.mensaje_clienta, 'El mensaje de la clienta');
   const indicaciones = texto(c.indicaciones, LIMITES.indicaciones, 'Las indicaciones');
   if (c.tipo === 'respuesta' && !mensajeClienta) throw falla('Pega el mensaje de la clienta al que vas a responder.');
-  return { tipo: c.tipo, mensajeClienta, indicaciones };
+  return { tipo: c.tipo, estilo, mensajeClienta, indicaciones };
 }
 
 // Mensaje para el modelo. Todo lo que no es nombre de pila ni etapa pasa por el enmascarado.
-function armarMensaje({ clienta, tipo, mensajeClienta = '', indicaciones = '' }) {
+function armarMensaje({ clienta, tipo, estilo = ESTILO_POR_DEFECTO, mensajeClienta = '', indicaciones = '' }) {
   const partes = [
     `Tipo de mensaje: ${tipo}. ${TIPOS[tipo]}`,
+    `Estilo: ${(ESTILOS[estilo] || ESTILOS[ESTILO_POR_DEFECTO]).descripcion}`,
     `Nombre de pila: ${nombreDePila(clienta)}`,
     `Etapa de la clienta: ${ETAPAS_ROTULO[clienta.etapa] || clienta.etapa}`,
     `<notas>${sinEtiquetas(enmascarar(String(clienta.notas || '').slice(0, LIMITES.notas)))}</notas>`
@@ -77,11 +96,13 @@ function armarMensaje({ clienta, tipo, mensajeClienta = '', indicaciones = '' })
 }
 
 // -> { ok, violaciones: [codigos] }
-function verificarBorrador(texto, { clienta, mensajeClienta = '', indicaciones = '' }) {
+function verificarBorrador(texto, { clienta, estilo = ESTILO_POR_DEFECTO, mensajeClienta = '', indicaciones = '' }) {
   const v = [];
   const t = String(texto || '');
   if (!t.trim()) return { ok: false, violaciones: ['vacio'] };
-  if (t.length > LIMITES.borrador) v.push('demasiado_largo');
+  const e = ESTILOS[estilo] || ESTILOS[ESTILO_POR_DEFECTO];
+  if (t.length > LIMITES.borrador || t.trim().split(/\s+/).length > Math.ceil(e.maxPalabras * TOLERANCIA_PALABRAS)) v.push('demasiado_largo');
+  if ((t.match(RE_EMOJI) || []).length > e.maxEmojis) v.push('demasiados_emojis');
   if (contieneDatosSensibles(t, clienta)) v.push('datos_sensibles');
   if (RE_MARCAS.test(t)) v.push('marcas_de_enmascarado');
   if (enmascarar(t) !== t) v.push('datos_personales'); // teléfonos, cédulas, correos o direcciones, aunque sean inventados
@@ -94,7 +115,8 @@ function verificarBorrador(texto, { clienta, mensajeClienta = '', indicaciones =
 
 const CORRECCIONES = {
   vacio: 'Escribe el mensaje.',
-  demasiado_largo: 'Hazlo más corto: máximo 70 palabras.',
+  demasiado_largo: 'Hazlo más corto, respetando el máximo de palabras del estilo.',
+  demasiados_emojis: 'Usa menos emojis, o ninguno si el estilo no los permite.',
   datos_sensibles: 'No incluyas teléfonos, cédulas ni direcciones de la clienta.',
   marcas_de_enmascarado: 'No escribas marcas como [TELÉFONO] o [NÚMERO]; simplemente no menciones esos datos.',
   datos_personales: 'No escribas teléfonos, números largos, correos ni direcciones.',
@@ -103,8 +125,9 @@ const CORRECCIONES = {
   caracteres_extranos: 'Escribe solo con letras del alfabeto español.'
 };
 
-function plantillaFija(tipo, clienta) {
-  const f = PLANTILLAS[tipo] || PLANTILLAS.seguimiento;
+function plantillaFija(tipo, clienta, estilo = ESTILO_POR_DEFECTO) {
+  const grupo = (ESTILOS[estilo] || ESTILOS[ESTILO_POR_DEFECTO]).trato === 'usted' ? PLANTILLAS_USTED : PLANTILLAS;
+  const f = grupo[tipo] || grupo.seguimiento;
   return f(nombreDePila(clienta) || 'hola');
 }
 
@@ -114,9 +137,9 @@ function crearRedactor({ cliente = null, apiKey = process.env.ANTHROPIC_API_KEY,
   if (!llamar) return null;
 
   // -> { borrador, respaldo, motivo, uso }
-  return async function redactar({ clienta, tipo, mensajeClienta = '', indicaciones = '' }) {
+  return async function redactar({ clienta, tipo, estilo = ESTILO_POR_DEFECTO, mensajeClienta = '', indicaciones = '' }) {
     const uso = { entrada: 0, salida: 0, vueltas: 0 };
-    const mensajes = [{ role: 'user', content: armarMensaje({ clienta, tipo, mensajeClienta, indicaciones }) }];
+    const mensajes = [{ role: 'user', content: armarMensaje({ clienta, tipo, estilo, mensajeClienta, indicaciones }) }];
     let motivo = 'sin_respuesta';
     try {
       for (let intento = 0; intento < 2; intento++) {
@@ -125,7 +148,7 @@ function crearRedactor({ cliente = null, apiKey = process.env.ANTHROPIC_API_KEY,
         uso.entrada += (r.usage && r.usage.input_tokens) || 0;
         uso.salida += (r.usage && r.usage.output_tokens) || 0;
         const texto = aTextoPlano(textoDe(r.content)).replace(/^["“«]+|["”»]+$/g, '').trim();
-        const verificacion = verificarBorrador(texto, { clienta, mensajeClienta, indicaciones });
+        const verificacion = verificarBorrador(texto, { clienta, estilo, mensajeClienta, indicaciones });
         if (verificacion.ok && r.stop_reason !== 'max_tokens') return { borrador: texto, respaldo: false, motivo: null, uso };
         motivo = r.stop_reason === 'max_tokens' ? 'cortado' : verificacion.violaciones[0];
         if (intento === 0) {
@@ -137,8 +160,8 @@ function crearRedactor({ cliente = null, apiKey = process.env.ANTHROPIC_API_KEY,
     } catch (e) {
       motivo = (e && e.codigo) || 'error';
     }
-    return { borrador: plantillaFija(tipo, clienta), respaldo: true, motivo, uso };
+    return { borrador: plantillaFija(tipo, clienta, estilo), respaldo: true, motivo, uso };
   };
 }
 
-module.exports = { crearRedactor, validarSolicitud, armarMensaje, verificarBorrador, plantillaFija, SISTEMA_REDACCION, TIPOS, LIMITES, PLANTILLAS };
+module.exports = { crearRedactor, validarSolicitud, ESTILOS, ESTILO_POR_DEFECTO, PLANTILLAS_USTED, armarMensaje, verificarBorrador, plantillaFija, SISTEMA_REDACCION, TIPOS, LIMITES, PLANTILLAS };

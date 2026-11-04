@@ -149,6 +149,20 @@ test('redactar API: solo sobre fichas propias; ni otra usuaria ni la administrad
   });
 });
 
+test('redactar API: el estilo viaja hasta el modelo; uno inválido da 400 sin llamar a la IA', conSqlite, async () => {
+  await conServidor({}, async ({ llamar, entrar, cuerpos }) => {
+    const cookie = await entrar('ana');
+    const id = await crear(llamar, cookie);
+    assert.equal((await redactar(llamar, cookie, id, { tipo: 'seguimiento', estilo: 'formal' })).estado, 200);
+    assert.match(cuerpos[0].messages[0].content, /Tono formal y respetuoso/);
+    assert.equal((await redactar(llamar, cookie, id, { tipo: 'seguimiento' })).estado, 200);
+    assert.match(cuerpos[1].messages[0].content, /Tono cercano y cálido/);
+    const mala = await redactar(llamar, cookie, id, { tipo: 'seguimiento', estilo: 'pirata' });
+    assert.deepEqual([mala.estado, mala.json.codigo], [400, 'solicitud_invalida']);
+    assert.equal(cuerpos.length, 2);
+  });
+});
+
 test('redactar API: solicitudes inválidas dan 400 sin llamar a la IA ni gastar el cupo', conSqlite, async () => {
   await conServidor({ limitesRedaccion: crearLimites({ porMinuto: 1, porDia: 1 }) }, async ({ llamar, entrar, cuerpos }) => {
     const cookie = await entrar('ana');

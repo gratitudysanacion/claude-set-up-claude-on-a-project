@@ -69,6 +69,8 @@ const CLAVE = 'clave-de-prueba-123';
   assert.ok(!/\bnull\b|undefined/.test(await a.p.textContent('#manager-area')), 'la pantalla no debe mostrar "null" ni "undefined"');
   ok('la usuaria entra al Gestor: sin chat, con indicadores y lista vacía');
 
+  const estilo = await a.p.evaluate(() => { const c = getComputedStyle(document.querySelector('.mg-pestana')); return { f: c.fontFamily, t: parseFloat(c.fontSize) }; });
+  assert.ok(estilo.t <= 14 && !/Georgia/i.test(estilo.f), `las pestañas deben tener el tamaño de los controles, no el del cuerpo (${JSON.stringify(estilo)})`);
   await a.p.click('#mg-nueva');
   await a.p.waitForSelector('#mg-form');
   assert.ok(await a.p.isDisabled('#mg-guardar'));
@@ -135,8 +137,12 @@ const CLAVE = 'clave-de-prueba-123';
   assert.ok(await a.p.isVisible('#mg-red-ir'));
   assert.ok(!(await a.p.isVisible('#mg-red-mensaje')));
   assert.match(await a.p.textContent('#mg-redactar'), /solo su primer nombre.*sin teléfonos, cédulas ni direcciones/);
+  // el estilo se puede elegir; por defecto es el cercano
+  assert.equal(await a.p.inputValue('#mg-red-estilo'), 'cercano');
+  assert.deepEqual(await a.p.locator('#mg-red-estilo option').allTextContents(), ['Cercano y cálido', 'Formal y respetuoso (usted)', 'Breve y directo', 'Entusiasta y motivador']);
   await a.p.click('#mg-red-ir');
   await a.p.waitForSelector('#mg-red-borrador:visible');
+  assert.match(llamadasIA.at(-1), /Tono cercano y cálido/);
   assert.match(await a.p.inputValue('#mg-red-borrador'), /^Hola Marta/);
   assert.match(await a.p.textContent('#mg-red-estado'), /No se guarda/);
   const enviado = llamadasIA.join('|');
@@ -151,6 +157,13 @@ const CLAVE = 'clave-de-prueba-123';
   await a.p.waitForFunction(() => /Copiado/.test(document.querySelector('#mg-red-estado').textContent));
   assert.equal(await a.p.evaluate(() => navigator.clipboard.readText()), 'Hola Marta, mensaje editado por mí.');
   ok('copiar deja en el portapapeles el texto editado, no el original');
+
+  await a.p.selectOption('#mg-red-estilo', 'formal');
+  await a.p.click('#mg-red-ir');
+  await a.p.waitForFunction(() => /^Hola Marta/.test(document.querySelector('#mg-red-borrador').value));
+  assert.match(llamadasIA.at(-1), /Tono formal y respetuoso, tratando de usted/);
+  assert.equal(await a.p.evaluate(() => localStorage.getItem('mg-estilo')), 'formal');
+  ok('el estilo elegido viaja al modelo y la pantalla lo recuerda la próxima vez');
 
   await a.p.selectOption('#mg-red-tipo', 'respuesta');
   assert.ok(await a.p.isVisible('#mg-red-mensaje'));
@@ -170,7 +183,7 @@ const CLAVE = 'clave-de-prueba-123';
   await a.p.fill('#mg-red-indic', 'TRAMPA');
   await a.p.click('#mg-red-ir');
   await a.p.waitForFunction(() => /plantilla/.test(document.querySelector('#mg-red-estado').textContent));
-  assert.match(await a.p.inputValue('#mg-red-borrador'), /^Hola Marta, gracias por escribirme/);
+  assert.match(await a.p.inputValue('#mg-red-borrador'), /^Buen día, Marta\. Gracias por escribirme/);   // estilo formal elegido: la plantilla trata de usted
   assert.ok(!/3105551234/.test(await a.p.inputValue('#mg-red-borrador')));
   ok('si la IA incumple las reglas, la pantalla muestra la plantilla y lo avisa (nunca el texto rechazado)');
 

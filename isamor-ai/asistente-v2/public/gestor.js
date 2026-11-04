@@ -304,12 +304,19 @@
     raiz.querySelector('#mg-titulo').focus({ preventScroll: true });
   }
 
+  // Estilos de redacción (los mismos que valida el servidor).
+  const ESTILOS = [['cercano', 'Cercano y cálido'], ['formal', 'Formal y respetuoso (usted)'], ['breve', 'Breve y directo'], ['entusiasta', 'Entusiasta y motivador']];
+
   // ---------- Redacción asistida (solo sobre las fichas propias; el borrador no se guarda en ningún lado) ----------
   function bloqueRedaccion(c) {
     const tipo = el('select', { id: 'mg-red-tipo', 'aria-label': 'Tipo de mensaje' },
       el('option', { value: 'seguimiento', texto: 'Seguimiento' }),
       el('option', { value: 'recordatorio', texto: 'Recordatorio' }),
       el('option', { value: 'respuesta', texto: 'Respuesta al mensaje de la clienta' }));
+    const estilo = el('select', { id: 'mg-red-estilo', 'aria-label': 'Estilo del mensaje' },
+      ...ESTILOS.map(([id, rotuloEstilo]) => el('option', { value: id, texto: rotuloEstilo })));
+    try { const guardado = localStorage.getItem('mg-estilo'); if (ESTILOS.some(e => e[0] === guardado)) estilo.value = guardado; } catch { /* sin almacenamiento: queda el predeterminado */ }
+    estilo.addEventListener('change', () => { try { localStorage.setItem('mg-estilo', estilo.value); } catch { /* no es indispensable */ } });
     const mensaje = el('textarea', { id: 'mg-red-mensaje', maxlength: '800', rows: '3', placeholder: 'Pega aquí el mensaje de la clienta' });
     const indic = el('input', { id: 'mg-red-indic', type: 'text', maxlength: '300', placeholder: 'Indicaciones (opcional). Ej.: dile que el pedido llega el viernes' });
     const cajaMensaje = el('label', { clase: 'mg-campo hidden', id: 'mg-red-caja-mensaje', for: 'mg-red-mensaje' }, el('span', { texto: 'Mensaje de la clienta' }), mensaje);
@@ -322,7 +329,7 @@
         el('button', { type: 'button', clase: 'primary', id: 'mg-red-copiar', texto: 'Copiar', alClick: () => copiar(borrador, estado) }),
         el('button', { type: 'button', clase: 'secondary', id: 'mg-red-otra', texto: 'Redactar otra versión', alClick: () => ir.click() })));
     const ir = el('button', { type: 'button', clase: 'primary', id: 'mg-red-ir', texto: 'Redactar con IA', alClick: async () => {
-      const cuerpo = { tipo: tipo.value, indicaciones: indic.value.trim() };
+      const cuerpo = { tipo: tipo.value, estilo: estilo.value, indicaciones: indic.value.trim() };
       if (tipo.value === 'respuesta') cuerpo.mensaje_clienta = mensaje.value.trim();
       if (tipo.value === 'respuesta' && !cuerpo.mensaje_clienta) { mostrarEstado(estado, 'Pega el mensaje de la clienta al que vas a responder.', 'error'); mensaje.focus(); return; }
       ir.disabled = true; mostrarEstado(estado, 'Redactando…', '');
@@ -346,6 +353,7 @@
       el('p', { clase: 'mg-consent-info', texto: 'La IA recibe solo su primer nombre, su etapa y tus notas sin teléfonos, cédulas ni direcciones. No escribas en las notas datos de salud, claves ni cuentas. No inventa precios: si necesitas uno, escríbelo en las indicaciones.' }),
       el('div', { clase: 'mg-rejilla' },
         el('label', { clase: 'mg-campo', for: 'mg-red-tipo' }, el('span', { texto: 'Tipo de mensaje' }), tipo),
+        el('label', { clase: 'mg-campo', for: 'mg-red-estilo' }, el('span', { texto: 'Estilo' }), estilo),
         el('label', { clase: 'mg-campo', for: 'mg-red-indic' }, el('span', { texto: 'Indicaciones' }), indic)),
       cajaMensaje, el('div', { clase: 'mg-acciones' }, ir), estado, resultado);
   }

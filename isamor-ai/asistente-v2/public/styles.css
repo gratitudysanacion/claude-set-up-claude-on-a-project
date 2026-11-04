@@ -805,3 +805,14 @@ button.mg-kpi:hover { border-color: var(--gold); }
   .mg-tabla tr { padding: 8px 0; border-bottom: 1px solid var(--border); }
   .mg-tabla td { border: 0; padding: 3px 0; }
 }
+
+/* ---- Gestor: redacción asistida ---- */
+.mg-redactar { display: grid; gap: 12px; padding: 16px; border: 1px solid var(--gold); border-radius: 12px; background: #fffdf8; }
+.mg-redactar h4 { margin: 0; }
+.mg-redactar textarea, .mg-redactar select, .mg-redactar input[type="text"] {
+  width: 100%; padding: 10px 13px; border: 1px solid #e5d9e1; border-radius: 10px; outline: none; background: white;
+  font: inherit; font-size: 14px; color: var(--ink); line-height: 1.5;
+}
+.mg-redactar select, .mg-redactar input[type="text"] { min-height: 44px; padding-top: 0; padding-bottom: 0; }
+.mg-redactar textarea:focus, .mg-redactar select:focus, .mg-redactar input:focus { border-color: var(--wine); box-shadow: 0 0 0 3px rgba(244, 119, 33, .12); }
+.mg-mensaje.aviso { border-color: #ead9b9; color: #745526; background: #fffaf0; }

@@ -294,6 +294,7 @@
         el('h3', { clase: 'mg-titulo', id: 'mg-titulo', tabindex: '-1', texto: c.nombre }),
         el('span', { clase: `mg-etapa mg-etapa-${c.etapa}`, texto: rotulo(c.etapa) })),
       formulario({ clienta: c, nueva: false }),
+      lectura ? null : bloqueRedaccion(c),
       el('div', { clase: 'mg-columnas' },
         el('div', {}, el('h4', { texto: 'Recordatorios' }), lista, nuevoRec),
         el('div', {}, el('h4', { texto: 'Historial de etapas' }), historial,
@@ -301,6 +302,66 @@
       el('div', { clase: 'mg-acciones' },
         el('button', { type: 'button', clase: 'secondary', id: 'mg-exportar', texto: 'Descargar datos (JSON)', alClick: exportar }), borrar));
     raiz.querySelector('#mg-titulo').focus({ preventScroll: true });
+  }
+
+  // ---------- Redacción asistida (solo sobre las fichas propias; el borrador no se guarda en ningún lado) ----------
+  function bloqueRedaccion(c) {
+    const tipo = el('select', { id: 'mg-red-tipo', 'aria-label': 'Tipo de mensaje' },
+      el('option', { value: 'seguimiento', texto: 'Seguimiento' }),
+      el('option', { value: 'recordatorio', texto: 'Recordatorio' }),
+      el('option', { value: 'respuesta', texto: 'Respuesta al mensaje de la clienta' }));
+    const mensaje = el('textarea', { id: 'mg-red-mensaje', maxlength: '800', rows: '3', placeholder: 'Pega aquí el mensaje de la clienta' });
+    const indic = el('input', { id: 'mg-red-indic', type: 'text', maxlength: '300', placeholder: 'Indicaciones (opcional). Ej.: dile que el pedido llega el viernes' });
+    const cajaMensaje = el('label', { clase: 'mg-campo hidden', id: 'mg-red-caja-mensaje', for: 'mg-red-mensaje' }, el('span', { texto: 'Mensaje de la clienta' }), mensaje);
+    tipo.addEventListener('change', () => mostrarNodo(cajaMensaje, tipo.value === 'respuesta'));
+    const estado = el('div', { id: 'mg-red-estado', clase: 'mg-mensaje hidden', role: 'status' });
+    const borrador = el('textarea', { id: 'mg-red-borrador', rows: '5', maxlength: '2000', 'aria-label': 'Borrador del mensaje (puedes editarlo)' });
+    const resultado = el('div', { id: 'mg-red-resultado', clase: 'hidden' },
+      el('label', { clase: 'mg-campo', for: 'mg-red-borrador' }, el('span', { texto: 'Borrador (puedes editarlo antes de copiarlo)' }), borrador),
+      el('div', { clase: 'mg-acciones' },
+        el('button', { type: 'button', clase: 'primary', id: 'mg-red-copiar', texto: 'Copiar', alClick: () => copiar(borrador, estado) }),
+        el('button', { type: 'button', clase: 'secondary', id: 'mg-red-otra', texto: 'Redactar otra versión', alClick: () => ir.click() })));
+    const ir = el('button', { type: 'button', clase: 'primary', id: 'mg-red-ir', texto: 'Redactar con IA', alClick: async () => {
+      const cuerpo = { tipo: tipo.value, indicaciones: indic.value.trim() };
+      if (tipo.value === 'respuesta') cuerpo.mensaje_clienta = mensaje.value.trim();
+      if (tipo.value === 'respuesta' && !cuerpo.mensaje_clienta) { mostrarEstado(estado, 'Pega el mensaje de la clienta al que vas a responder.', 'error'); mensaje.focus(); return; }
+      ir.disabled = true; mostrarEstado(estado, 'Redactando…', '');
+      try {
+        const r = await llamar(`/api/gestor/clientas/${encodeURIComponent(c.id)}/redactar`, { metodo: 'POST', cuerpo });
+        if (r.estado === 401) { S.alSesionVencida(); return; }
+        if (r.estado !== 200) {
+          mostrarNodo(resultado, false);
+          mostrarEstado(estado, (r.datos && r.datos.error) || 'No se pudo redactar el mensaje. Inténtalo de nuevo.', 'error');
+          return;
+        }
+        borrador.value = r.datos.borrador || '';
+        mostrarNodo(resultado, true);
+        mostrarEstado(estado, r.datos.aviso || 'Revisa el borrador, ajústalo a tu estilo y cópialo. No se guarda.', r.datos.aviso ? 'aviso' : '');
+        borrador.focus({ preventScroll: true });
+      } catch { mostrarEstado(estado, 'No pude conectar con el servidor.', 'error'); }
+      finally { ir.disabled = false; }
+    } });
+    return el('section', { clase: 'mg-redactar', id: 'mg-redactar', 'aria-label': 'Redactar mensaje con IA' },
+      el('h4', { texto: 'Redactar un mensaje para esta clienta' }),
+      el('p', { clase: 'mg-consent-info', texto: 'La IA recibe solo su primer nombre, su etapa y tus notas sin teléfonos, cédulas ni direcciones. No escribas en las notas datos de salud, claves ni cuentas. No inventa precios: si necesitas uno, escríbelo en las indicaciones.' }),
+      el('div', { clase: 'mg-rejilla' },
+        el('label', { clase: 'mg-campo', for: 'mg-red-tipo' }, el('span', { texto: 'Tipo de mensaje' }), tipo),
+        el('label', { clase: 'mg-campo', for: 'mg-red-indic' }, el('span', { texto: 'Indicaciones' }), indic)),
+      cajaMensaje, el('div', { clase: 'mg-acciones' }, ir), estado, resultado);
+  }
+  function mostrarEstado(caja, texto, tipo) {
+    caja.textContent = texto;
+    caja.className = `mg-mensaje ${tipo}`.trim();
+    mostrarNodo(caja, !!texto);
+  }
+  async function copiar(area, estado) {
+    try {
+      await navigator.clipboard.writeText(area.value);
+    } catch {
+      area.focus(); area.select();
+      try { if (!document.execCommand('copy')) throw new Error('no copiado'); } catch { mostrarEstado(estado, 'No pude copiar solo. Selecciona el texto y cópialo con Ctrl+C.', 'error'); return; }
+    }
+    mostrarEstado(estado, 'Copiado. Pégalo en WhatsApp.', 'ok');
   }
 
   async function recargarFicha(textoAviso) {

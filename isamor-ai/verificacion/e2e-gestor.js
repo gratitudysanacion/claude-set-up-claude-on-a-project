@@ -10,6 +10,8 @@ const { crearAuth, crearRegistroUsuario } = require(path.join(base, 'src/auth'))
 const { crearLimites } = require(path.join(base, 'src/limites'));
 const { crearCatalogo } = require(path.join(base, 'src/catalogo'));
 const { crearCifrado, generarLlaveHex } = require(path.join(base, 'src/cifrado'));
+const { crearRedactor } = require(path.join(base, 'src/redaccion'));
+const { crearGasto } = require(path.join(base, 'src/gasto'));
 const { crearGestor, abrirBase, ETAPAS, ETAPAS_ROTULO, TEXTO_CONSENTIMIENTO, CONSENTIMIENTO_VERSION } = require(path.join(base, 'src/gestor'));
 const { productos, campana } = require(path.join(base, 'test/fixtures'));
 const FUERA = path.join(__dirname, 'capturas');
@@ -20,7 +22,17 @@ const CLAVE = 'clave-de-prueba-123';
   const reg = await crearRegistroUsuario(CLAVE);
   const gestor = crearGestor({ db: abrirBase(':memory:'), cifrado: crearCifrado(generarLlaveHex()) });
   const gestorMeta = { etapas: ETAPAS.map(e => ({ id: e, rotulo: ETAPAS_ROTULO[e] })), consentimiento: { version: CONSENTIMIENTO_VERSION, texto: TEXTO_CONSENTIMIENTO } };
+  // IA simulada: devuelve un borrador correcto, salvo si en el mensaje aparece la palabra "TRAMPA", que devuelve un teléfono inventado.
+  const llamadasIA = [];
+  const cliente = async cuerpo => {
+    llamadasIA.push(JSON.stringify(cuerpo));
+    const dato = cuerpo.messages[0].content;
+    const texto = /TRAMPA/.test(dato) ? 'Llámame al 3105551234' : 'Hola Marta, ¿cómo vas con tu pedido? Quedo atenta por si te ayudo con algo más.';
+    return { stop_reason: 'end_turn', content: [{ type: 'text', text: texto }], usage: { input_tokens: 400, output_tokens: 60 } };
+  };
+  const gasto = crearGasto({ topeUsd: 10 });
   const servidor = crearServidor({
+    redactor: crearRedactor({ cliente }), gasto,
     auth: crearAuth({ usuarios: { ana: { ...reg, modulos: ['sales', 'manager'] }, jefa: { ...reg, modulos: ['sales', 'manager'], rol: 'admin' }, sola: { ...reg, modulos: ['sales'] } } }),
     limites: crearLimites({ porMinuto: 60, porDia: 500 }), catalogo: crearCatalogo({ productos, campana, hoy: () => '2026-10-27' }),
     responderes: {}, gestor, gestorMeta, publicDir: path.join(base, 'public'), log: () => {}
@@ -111,6 +123,65 @@ const CLAVE = 'clave-de-prueba-123';
   assert.equal(await a.p.locator('.mg-pestana[data-vista="soporte"]').count(), 0);
   ok('una usuaria común no ve la pestaña Soporte');
 
+  // ---- Redacción asistida ----
+  await a.p.click('.mg-pestana[data-vista="lista"]');
+  await a.p.waitForSelector('#mg-lista .mg-fila');
+  await a.p.click('#mg-lista .mg-fila');
+  await a.p.waitForSelector('#mg-redactar');
+  // el nombre de la prueba de seguridad (con HTML) se cambia por uno normal para probar la redacción
+  await a.p.fill('#mg-nombre', 'Marta Pérez');
+  await a.p.click('#mg-guardar');
+  await a.p.waitForFunction(() => /Cambios guardados/.test(document.querySelector('#mg-mensaje').textContent));
+  assert.ok(await a.p.isVisible('#mg-red-ir'));
+  assert.ok(!(await a.p.isVisible('#mg-red-mensaje')));
+  assert.match(await a.p.textContent('#mg-redactar'), /solo su primer nombre.*sin teléfonos, cédulas ni direcciones/);
+  await a.p.click('#mg-red-ir');
+  await a.p.waitForSelector('#mg-red-borrador:visible');
+  assert.match(await a.p.inputValue('#mg-red-borrador'), /^Hola Marta/);
+  assert.match(await a.p.textContent('#mg-red-estado'), /No se guarda/);
+  const enviado = llamadasIA.join('|');
+  for (const x of ['1020304050', '3001234567', 'Pérez']) assert.ok(!enviado.includes(x), `la IA no debe recibir ${x}`);
+  assert.match(enviado, /Marta/);
+  await a.p.screenshot({ path: path.join(FUERA, 'g5-redactar.png') });
+  ok('redactar seguimiento: borrador editable; la IA recibió solo el primer nombre, sin cédula, teléfono ni apellido');
+
+  await a.p.fill('#mg-red-borrador', 'Hola Marta, mensaje editado por mí.');
+  await a.ctx.grantPermissions(['clipboard-read', 'clipboard-write']);
+  await a.p.click('#mg-red-copiar');
+  await a.p.waitForFunction(() => /Copiado/.test(document.querySelector('#mg-red-estado').textContent));
+  assert.equal(await a.p.evaluate(() => navigator.clipboard.readText()), 'Hola Marta, mensaje editado por mí.');
+  ok('copiar deja en el portapapeles el texto editado, no el original');
+
+  await a.p.selectOption('#mg-red-tipo', 'respuesta');
+  assert.ok(await a.p.isVisible('#mg-red-mensaje'));
+  await a.p.click('#mg-red-ir');
+  await a.p.waitForFunction(() => /Pega el mensaje de la clienta/.test(document.querySelector('#mg-red-estado').textContent));
+  await a.p.fill('#mg-red-mensaje', '¿Cuánto vale? Mi número es 3109998877');
+  await a.p.fill('#mg-red-indic', 'dile que confirmo el valor');
+  const antes = llamadasIA.length;
+  await a.p.click('#mg-red-ir');
+  await a.p.waitForFunction(n => /^Hola Marta/.test(document.querySelector('#mg-red-borrador').value), 0);
+  await a.p.waitForFunction(() => /Revisa el borrador/.test(document.querySelector('#mg-red-estado').textContent));
+  assert.equal(llamadasIA.length, antes + 1);
+  assert.ok(!llamadasIA.at(-1).includes('3109998877'), 'el teléfono pegado en el mensaje de la clienta no sale al proveedor');
+  assert.match(llamadasIA.at(-1), /confirmo el valor/);
+  ok('responder a la clienta: exige pegar su mensaje y enmascara el teléfono que venga dentro');
+
+  await a.p.fill('#mg-red-indic', 'TRAMPA');
+  await a.p.click('#mg-red-ir');
+  await a.p.waitForFunction(() => /plantilla/.test(document.querySelector('#mg-red-estado').textContent));
+  assert.match(await a.p.inputValue('#mg-red-borrador'), /^Hola Marta, gracias por escribirme/);
+  assert.ok(!/3105551234/.test(await a.p.inputValue('#mg-red-borrador')));
+  ok('si la IA incumple las reglas, la pantalla muestra la plantilla y lo avisa (nunca el texto rechazado)');
+
+  gasto.registrar({ entrada: 0, salida: 30_000_000 });   // pasa el tope mensual
+  await a.p.fill('#mg-red-indic', '');
+  await a.p.click('#mg-red-ir');
+  await a.p.waitForFunction(() => /límite mensual/.test(document.querySelector('#mg-red-estado').textContent));
+  assert.ok(!(await a.p.isVisible('#mg-red-resultado')));
+  ok('al llegar al tope mensual de gasto la pantalla lo explica y no muestra borrador');
+  assert.ok(!/\bnull\b|undefined/.test(await a.p.textContent('#manager-area')));
+
   // Salir del módulo vacía los datos personales del DOM
   await a.p.click('.mg-pestana[data-vista="lista"]');
   await a.p.waitForSelector('#mg-lista');
@@ -173,6 +244,7 @@ const CLAVE = 'clave-de-prueba-123';
   await adm.p.waitForSelector('#mg-form');
   assert.ok(await adm.p.isDisabled('#mg-nombre'));
   assert.equal(await adm.p.locator('#mg-guardar').count(), 0);
+  assert.equal(await adm.p.locator('#mg-redactar').count(), 0);
   assert.equal(await adm.p.locator('#mg-borrar').count(), 0);
   await adm.p.screenshot({ path: path.join(FUERA, 'g3-soporte.png') });
   ok('modo soporte: la administradora ve las clientas de otra usuaria sin poder crear, editar ni borrar');

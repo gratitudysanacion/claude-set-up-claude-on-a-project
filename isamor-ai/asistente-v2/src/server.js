@@ -4,6 +4,8 @@ const http = require('node:http');
 const fs = require('node:fs');
 const path = require('node:path');
 const { MODULOS_VALIDOS } = require('./auth');
+const { crearLimites: crearLimitesDeUso } = require('./limites');
+const { validarSolicitud } = require('./redaccion');
 
 const VERSION = '2.0.0-dev';
 const MAX_LOGIN_BYTES = 4096;
@@ -38,7 +40,8 @@ const ESTATICOS = {
 // Códigos de error del Gestor -> estado HTTP. Los no listados son errores de validación (400).
 // Códigos de error de la administración de usuarios -> estado HTTP (el resto son errores de validación: 400).
 const ESTADO_USUARIOS = { no_encontrado: 404, usuario_existe: 409, ultima_administradora: 409, bloqueado: 429, sin_permiso: 403 };
-const ESTADO_GESTOR = { no_encontrada: 404, sin_permiso: 403, limite_clientas: 409, consentimiento_requerido: 400 };
+const ESTADO_GESTOR = { no_encontrada: 404, sin_permiso: 403, limite_clientas: 409, consentimiento_requerido: 400, solicitud_invalida: 400 };
+const MENSAJE_LIMITE_MENSUAL = { error: 'Se alcanzó el límite mensual de uso de la IA. Vuelve a intentarlo el próximo mes o pide a la administradora que lo revise.', codigo: 'limite_mensual' };
 
 class ErrorHttp extends Error {
   constructor(estado, mensaje) { super(mensaje); this.estado = estado; }
@@ -119,6 +122,7 @@ function origenPermitido(req) {
 // `responder` atiende el módulo comercial (compatibilidad); `responderes` es un mapa módulo -> responder.
 function crearServidor({
   auth, limites, catalogo, responder = null, responderes = {}, gestor = null, gestorMeta = null, publicDir,
+  redactor = null, gasto = null, limitesRedaccion = crearLimitesDeUso({ porMinuto: 6, porDia: 30 }),
   log = datos => console.log(JSON.stringify(datos)), ahora = () => Date.now()
 }) {
   const limpieza = setInterval(() => auth.limpiar(), 10 * 60 * 1000);
@@ -169,6 +173,7 @@ function crearServidor({
     const partes = url.pathname.split('/').slice(3).map(x => { try { return decodeURIComponent(x); } catch { return ''; } }); // después de /api/admin/
     const metodo = req.method;
     try {
+      if (partes[0] === 'gasto' && partes.length === 1 && metodo === 'GET') return enviarJson(res, 200, { gasto: gasto ? gasto.estado() : null });
       if (partes[0] === 'usuarios' && partes.length === 1 && metodo === 'GET') return enviarJson(res, 200, { usuarios: auth.listarUsuarios() });
       if (partes[0] === 'usuarios' && partes.length === 1 && metodo === 'POST') {
         const c = await leerJson(req, MAX_USUARIOS_BYTES);
@@ -233,6 +238,21 @@ function crearServidor({
         if (partes.length === 2 && metodo === 'PUT') return enviarJson(res, 200, gestor.actualizar(ctx, id, await leerJson(req, MAX_GESTOR_BYTES)));
         if (partes.length === 2 && metodo === 'DELETE') return enviarJson(res, 200, gestor.borrar(ctx, id));
         if (partes.length === 3 && partes[2] === 'exportar' && metodo === 'GET') return enviarJson(res, 200, gestor.exportar(ctx, id, { duena }));
+        if (partes.length === 3 && partes[2] === 'redactar' && metodo === 'POST') {
+          const solicitud = validarSolicitud(await leerJson(req, MAX_GESTOR_BYTES));
+          if (!redactor) return enviarJson(res, 503, { error: 'La redacción con IA no está disponible en este momento.', codigo: 'ia_no_disponible' });
+          if (gasto && gasto.estado().bloqueado) return enviarJson(res, 503, MENSAJE_LIMITE_MENSUAL);
+          const clienta = gestor.obtener(ctx, id, {});   // solo fichas propias: la administradora tampoco redacta sobre las de otra usuaria
+          const lim = limitesRedaccion.consumir(usuario);
+          if (!lim.ok) {
+            return enviarJson(res, 429, { error: lim.motivo === 'dia' ? 'Alcanzaste el límite diario de borradores.' : 'Demasiados borradores seguidos. Espera un momento.' }, { 'Retry-After': String(lim.retryAfterS) });
+          }
+          const r = await redactor({ clienta, ...solicitud });
+          if (gasto) gasto.registrar(r.uso);
+          // Solo metadatos: nunca las notas, el mensaje de la clienta ni el borrador.
+          log({ t: new Date(ahora()).toISOString(), evento: 'redactar', usuario, tipo: solicitud.tipo, ...r.uso, caracteres: r.borrador.length, respaldo: r.respaldo, motivo: r.motivo });
+          return enviarJson(res, 200, { borrador: r.borrador, respaldo: r.respaldo, aviso: r.respaldo ? 'No pude redactar con IA: te dejo una plantilla para que la ajustes.' : null });
+        }
         if (partes.length === 3 && partes[2] === 'recordatorios' && metodo === 'POST') {
           return enviarJson(res, 201, gestor.crearRecordatorio(ctx, id, await leerJson(req, MAX_GESTOR_BYTES)));
         }
@@ -347,6 +367,7 @@ function crearServidor({
         if (!auth.modulosDe(usuario).includes(modulo)) {
           return enviarJson(res, 403, { error: 'Este módulo no está habilitado para tu usuario.', codigo: 'modulo_no_permitido' });
         }
+        if (gasto && gasto.estado().bloqueado) return enviarJson(res, 503, MENSAJE_LIMITE_MENSUAL);
         const uso = limites.consumir(usuario);
         if (!uso.ok) {
           return enviarJson(res, 429, {
@@ -357,6 +378,7 @@ function crearServidor({
         if (!atender) return enviarJson(res, 503, { error: 'El asistente no está disponible en este momento.', codigo: 'ia_no_disponible' });
         try {
           const r = await atender({ mensaje, usuario, catalogo, modulo });
+          if (gasto && r.uso) gasto.registrar(r.uso);
           // Solo metadatos de consumo: nunca el texto del mensaje ni de la respuesta.
           if (r.uso) log({ t: new Date(ahora()).toISOString(), evento: 'chat', usuario, modulo, ...r.uso, caracteres: String(r.respuesta).length, respaldo: !!r.respaldo, motivo: r.motivo || null });
           return enviarJson(res, 200, {
@@ -475,13 +497,29 @@ function arrancar() {
     }
   }
 
+  // Redacción asistida (Gestor) y tope mensual de gasto de la IA (10 USD por defecto; el límite real de la organización se fija en la consola).
+  const { crearRedactor } = require('./redaccion');
+  const { crearGasto } = require('./gasto');
+  const redactor = crearRedactor();
+  const topeUsd = Number(process.env.TOPE_MENSUAL_USD) > 0 ? Number(process.env.TOPE_MENSUAL_USD) : 10;
+  const gasto = crearGasto({
+    ruta: process.env.GASTO || path.join(raiz, 'data', 'gasto.json'), topeUsd,
+    precioEntrada: Number(process.env.PRECIO_ENTRADA_USD_MTOK) > 0 ? Number(process.env.PRECIO_ENTRADA_USD_MTOK) : undefined,
+    precioSalida: Number(process.env.PRECIO_SALIDA_USD_MTOK) > 0 ? Number(process.env.PRECIO_SALIDA_USD_MTOK) : undefined,
+    log: d => console.log(JSON.stringify(d))
+  });
+  const g = gasto.estado();
+  console.log(`Gasto de IA ${g.mes}: ${g.usd} de ${g.tope} USD (${g.porcentaje} %)${g.bloqueado ? ' — TOPE ALCANZADO: la IA responde que se agotó el límite mensual' : ''}.`);
+
   const servidor = crearServidor({
     auth: crearAuth({ usuarios, guardar: guardarUsuarios }),
     limites: crearLimites({
       porMinuto: Number(process.env.LIMITE_MINUTO) || 12,
       porDia: Number(process.env.LIMITE_DIA) || 200
     }),
-    catalogo, responder, responderes, gestor, gestorMeta, publicDir: path.join(raiz, 'public')
+    catalogo, responder, responderes, gestor, gestorMeta, publicDir: path.join(raiz, 'public'),
+    redactor, gasto,
+    limitesRedaccion: crearLimites({ porMinuto: 6, porDia: Number(process.env.LIMITE_REDACCION_DIA) || 30 })
   });
 
   const puerto = Number(process.env.PORT) || 3080;

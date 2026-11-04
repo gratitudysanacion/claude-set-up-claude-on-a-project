@@ -558,3 +558,18 @@ El panel, Gratitud, Nginx, UFW y el cron de respaldo **no se tocaron** en esta e
 | Bloqueo para usar clientas reales | Revisión legal del consentimiento (habeas data) |
 
 **Orden recomendado para mañana:** (1) comprobar el respaldo de las 08:00 UTC; (2) consulta normal en producción; (3) decidir la revisión legal; (4) preparar el paso del Gestor a producción solo cuando (3) esté resuelto; (5) el 7 u 8 nov, 3 consultas con el C12 y luego `--promover`. La lista completa está en `CLAUDE.md`, sección "Siguiente paso inmediato".
+
+## 17. Fase A del Gestor en producción (4 de noviembre de 2026)
+
+| Paso | Estado |
+|---|---|
+| A2 código nuevo (pantallas y scripts de respaldo) | Hecho con `actualizar.sh` (respaldo `asistente-v2-antes-20261104-014631`) |
+| A3 llave propia | Hecha; **rotada** porque la primera se pegó en el chat (sin datos cifrados que perder) |
+| A4 Node 22 | Hecho; prueba previa en el puerto 3085, PM2 id 3 |
+| A5 y A6 respaldo | Exclusión en el `tar`, cron y primer respaldo (0 clientas) |
+| Módulo `manager` | Quitado a `admin`; ninguna usuaria lo tiene |
+| Respaldo de las 08:00 UTC | Verificado el 4 nov: 232.958 bytes, incluye `usuarios.json` y `campana_siguiente.json` |
+| Consulta normal en producción | Correcta con C11 (670) |
+| Hallazgo | El Bloque 0 de seguridad (módulo `manager` en `admin`) salió con el módulo presente y se continuó; se corrigió de inmediato sin datos en riesgo (0 clientas) |
+
+Siguiente: revisión legal del consentimiento (bloquea la Fase B), consultas del C12 el 7 u 8 nov y `--promover`.

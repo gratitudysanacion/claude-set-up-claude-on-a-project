@@ -88,25 +88,24 @@ Cuatro módulos, en este orden en el menú lateral: 1 Asistente comercial, 2 Ase
 - Administración de usuarios (diseño, API, salvaguardas): `DISENO_ADMIN_USUARIOS_v1.md`
 - Despliegue, actualización, reversión y servidor de pruebas: `GUIA_DESPLIEGUE_Y_ACTUALIZACION.md`
 
-## Siguiente paso inmediato (al cierre del 2 nov 2026; continuar el 3 nov)
+## Siguiente paso inmediato (al cierre del 4 nov 2026)
 
-**Fechas:** martes 3 nov vencen los créditos de Claude en la nube de la usuaria · viernes 6 nov termina la campaña C11 · **sábado 7 nov 00:00 (Colombia) entra solo el C12** (hasta el 4 dic).
+**Fechas:** viernes 6 nov termina la campaña C11 · **sábado 7 nov 00:00 (Colombia) entra solo el C12** (hasta el 4 dic).
 
-**Hecho el 2 nov:** v2 y administración de usuarios en producción; Entrega 14 (compra especial y `--correcciones`) en pruebas **y producción**; **C12 programado en producción** (451 productos, 7 nov al 4 dic) y asistente reiniciado (el registro confirma "Campaña siguiente programada"); pantallas del Gestor (Entregas 15 y 15b) y respaldo/restauración de su base (Entregas 16 y 16b) **solo en pruebas**; documentos y código en GitHub (último commit de esta etapa: ver `git log`).
+**Hecho hasta el 4 nov:** v2, administración de usuarios y regla de compra especial en producción; **C12 programado** (451 productos, 7 nov al 4 dic) y confirmado en el registro; respaldo diario de las 08:00 UTC verificado con el código nuevo (232.958 bytes); consulta normal en producción con C11 correcta; **Fase A del Gestor completa en producción** (4 nov): código con las pantallas y los scripts de respaldo, `GESTOR_LLAVE` propia (rotada porque la primera se mostró en el chat; no había datos cifrados), `yanbal-assistant` en **Node 22** (PM2 id 3, intérprete `/opt/node22/bin/node`, cwd `/root`), `--exclude='gestor.db*'` en el `tar` de `respaldo-yanbal.sh` (copia `respaldo-yanbal.sh.antes-20261104`), cron `10 8 * * *` del respaldo del Gestor (copia `crontab-antes-20261104.txt`) y primer respaldo real (0 clientas). El Gestor está **activo pero sin usuarias asignadas** (se quitó `manager` a `admin`).
 
-**Estado del servidor de pruebas:** corre con el C12 simulado vigente (variables `CATALOGO_LECTURA` y `CAMPANA` que apuntan a `data/catalogo_lectura_siguiente.json` y a `/root/asistente-v2-pruebas/campana-c12-prueba.json`). Para volver al arranque normal: ver `GUIA_DESPLIEGUE_Y_ACTUALIZACION.md`, sección 7.
+**Estado del servidor de pruebas:** sigue con el C12 simulado vigente (ver `GUIA_DESPLIEGUE_Y_ACTUALIZACION.md`, sección 7).
 
-**Lista para el 3 nov (en este orden):**
-1. La usuaria pega `tail -3 /opt/respaldos-yanbal/respaldo.log` (el respaldo de las 08:00 UTC del 2 nov debe decir OK con el código nuevo).
-2. La usuaria hace una consulta normal en producción (sesión nueva: el reinicio cerró las sesiones) y confirma que sigue respondiendo con C11.
-3. Revisión legal del texto de consentimiento del Gestor (habeas data, Ley 1581) — **bloquea** usar clientas reales.
-4. **El 7 u 8 nov:** 3 consultas reales en producción (producto normal, 2 x 1 y 60099) y banner "C12 2026"; luego `node scripts/cargar-campana.js --promover --aplicar` en `/opt/yanbal-assistant` (con su frase de autorización).
-5. Paso del Gestor a producción (solo con 3 resuelto): Node 22 para `yanbal-assistant`, `GESTOR_LLAVE` propia escrita oculta en el servidor y guardada en el gestor de contraseñas, asignar el módulo `manager`, `--exclude='gestor.db*'` en el `tar` de `respaldo-yanbal.sh` (con copia previa del script), cron `10 8 * * *` con `/opt/node22/bin/node` para `scripts/respaldar-gestor.js` hacia `/opt/respaldos-yanbal/gestor/` (diseño en `DISENO_RESPALDO_GESTOR_v1.md`), copiar los scripts por `actualizar.sh`, copia externa semanal. Cada paso con respaldo, reversión y su frase.
-6. Limpieza (con autorización; el borrado en mensaje aparte): `/root/asistente-v2-pruebas/practica-restauracion`, `/root/asistente-v2-pruebas/respaldos-gestor-prueba` (contienen una clienta de prueba cifrada), copias `v3-antes-*`, `/root/panel-staging/`, `known_hosts`.
-7. Seguridad pendiente: Nginx (`autorizo nginx`), 60 actualizaciones (sin pasar a Ubuntu 26.04), Node 18 sin soporte, hallazgos A y B del panel, `campana.json` y `catalogo.json` de producción en 644, carpeta `baseline-20261026` en 755, renovar la API key antes del 30 abr 2027.
-8. Mejoras anotadas: acceso de inicio de sesión visible desde la pantalla de inicio; tipo de letra de las pestañas del Gestor (serif en lugar del de los botones); categoría de 60124 ("Perfumes y colonias") se puede corregir con `--correcciones`; Gestor: redacción asistida por IA (después).
+**Lista pendiente (en este orden):**
+1. **7 u 8 nov:** 3 consultas con el C12 en producción (producto normal, 2 x 1 y 60099) y banner "C12 2026"; luego `node scripts/cargar-campana.js --promover --aplicar` en `/opt/yanbal-assistant` (con su frase de autorización). Nota: producción corre con Node 22 desde el 4 nov.
+2. **Revisión legal del consentimiento del Gestor** (habeas data, Ley 1581): **bloquea la Fase B** (asignar el módulo `manager` a usuarias y guardar clientas reales).
+3. **Fase B:** asignar `manager` a las usuarias elegidas desde el módulo Usuarios, tras la aprobación legal.
+4. Redacción asistida por IA en el Gestor (decisión aparte de privacidad, costos y límites).
+5. Limpieza (con autorización; borrado en mensaje aparte): `/root/asistente-v2-pruebas/practica-restauracion`, `/root/asistente-v2-pruebas/respaldos-gestor-prueba`, copias `v3-antes-*`, `/root/prueba-node22.log`, `/root/panel-staging/`, `known_hosts`. Volver el servidor de pruebas a su arranque normal.
+6. Seguridad pendiente: Nginx (`autorizo nginx`), 60 actualizaciones (sin pasar a Ubuntu 26.04), `gratitud` y `yanbal-admin` siguen en Node 18 sin soporte, hallazgos A y B del panel, `campana.json` y `catalogo.json` de producción en 644, carpeta `baseline-20261026` en 755, renovar la API key antes del 30 abr 2027.
+7. Mejoras anotadas: acceso de inicio de sesión visible desde la pantalla de inicio; tipo de letra de las pestañas del Gestor; categoría de 60124 corregible con `--correcciones`.
 
-**Pendientes de la usuaria:** copia fuera del PC de `isamor_ed25519` y su passphrase; `ADMIN_USER`/`ADMIN_PASSWORD` del panel, la clave de `admin` del asistente y la llave del Gestor en el gestor de contraseñas; descargar `baseline-20261026`; instantáneas en hPanel; desglose de **Costo** de la consola de Anthropic (~0,43 USD sin explicar); `chmod 600` a `data/gestor.db*` en pruebas; verificar que el repositorio de GitHub sea privado.
+**Pendientes de la usuaria:** guardar `GESTOR_LLAVE` de producción (nueva) en el gestor de contraseñas si aún no lo hizo; copia fuera del PC de `isamor_ed25519` y su passphrase; `ADMIN_USER`/`ADMIN_PASSWORD` del panel y la clave de `admin` del asistente en el gestor de contraseñas; descargar `baseline-20261026`; instantáneas en hPanel; desglose de **Costo** de la consola de Anthropic (~0,43 USD sin explicar); `chmod 600` a `data/gestor.db*` en pruebas; verificar que el repositorio de GitHub sea privado.
 
 ### Regla de negocio: compra especial (aprobada por la usuaria el 2 nov 2026)
 Un artículo cuya promoción empieza por "Compra especial", con precio de oferta y sin precio normal, solo se adquiere con la compra de un producto y **no se vende suelto**. Cada vez que el asistente o el Estudio de contenido citen su precio deben aclararlo en el mismo texto; el código lo verifica (`verificarCompraEspecial`) y, si falta, entrega la ficha del catálogo, que siempre lo dice.
@@ -117,3 +116,5 @@ Un artículo cuya promoción empieza por "Compra especial", con precio de oferta
 - Cada cambio en el servidor lleva su frase (`autorizo entrega N`, `autorizo reiniciar pruebas`, `autorizo actualizar`, `autorizo programar c12 …`); los comandos de reversión van en un mensaje aparte.
 - Las pruebas de navegador deben buscar también texto basura ("null", "undefined"): una carrera en una prueba y un `replaceChildren(null)` pasaron desapercibidos hasta la prueba manual.
 - Una prueba que falla una vez no se descarta: se repite varias veces tras corregirla.
+- Un secreto que el terminal imprime una sola vez (la llave del Gestor) **no se pega en el chat**: se corre ese comando aparte y solo se pega la verificación de nombres y permisos. El 4 nov se pegó por error; se rotó sin pérdida porque aún no había datos cifrados.
+- Si una comprobación previa dice «deténgase» (p. ej. quitar el módulo `manager` a `admin` antes de activar el Gestor), no se continúa hasta que salga limpia.

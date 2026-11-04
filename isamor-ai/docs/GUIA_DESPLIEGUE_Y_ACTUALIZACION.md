@@ -87,3 +87,17 @@ Todas se instalan con el `entregaN_pegar.txt` (verifica huella, copia `v3-antes-
 
 `actualizar.sh` (Entrega 14) → `cargar-campana.js --origen /root/c12-entrada/c12-consolidado.json --campana "C12 2026" --desde 2026-11-07 --hasta 2026-12-04 --esperados 451 --aplicar` en `/opt/yanbal-assistant` → `pm2 restart yanbal-assistant --update-env`. El registro debe decir "Campaña siguiente programada: C12 2026 (451 productos)". Reversión: borrar `data/campana_siguiente.json` y `data/catalogo_lectura_siguiente.json` y reiniciar. Después del 7 nov: `--promover --aplicar`.
 
+## 10. Producción con Node 22 y Gestor activo (4 nov 2026)
+
+| Elemento | Valor |
+|---|---|
+| Proceso | `yanbal-assistant`, PM2 **id 3** (el id cambió al recrearlo), intérprete `/opt/node22/bin/node`, directorio de ejecución `/root`, script `/opt/yanbal-assistant/src/server.js` |
+| Cómo se hizo | `pm2 delete yanbal-assistant` y `pm2 start /opt/yanbal-assistant/src/server.js --name yanbal-assistant --interpreter /opt/node22/bin/node` desde `/root`, luego `pm2 save`. Antes se copió `/root/.pm2/dump.pm2` a `/root/respaldos-manuales/pm2-dump-antes-node22-20261104` |
+| Prueba previa | Segunda copia temporal en el puerto 3085 con `GESTOR_LLAVE=` en blanco (para no crear `gestor.db`): salud correcta |
+| Llave | `GESTOR_LLAVE` propia en `/opt/yanbal-assistant/.env` (600). Se rotó una vez; la definitiva solo está en el servidor y en el gestor de contraseñas de la usuaria |
+| Respaldo | `--exclude='gestor.db*'` en el `tar` de `respaldo-yanbal.sh`; cron `10 8 * * *` con `/opt/node22/bin/node --no-warnings scripts/respaldar-gestor.js` hacia `/opt/respaldos-yanbal/gestor/` y registro `respaldo-gestor.log` |
+| Gestor | Activo, sin usuarias asignadas (`admin` e `isamor` sin `manager`). Fase B tras la revisión legal |
+
+**Reversión a Node 18 (sin tocar datos):** `pm2 delete yanbal-assistant`, luego desde `/root`: `pm2 start /opt/yanbal-assistant/src/server.js --name yanbal-assistant` y `pm2 save`. El Gestor volvería a quedar desactivado (Node 18 no trae SQLite) y `gestor.db` se conserva. Cuando el Gestor tenga datos, no volver a Node 18 sin respaldar antes la base.
+
+**Si hay que actualizar el código de producción otra vez:** `actualizar.sh` hace `pm2 restart yanbal-assistant`, que conserva el intérprete Node 22. Verificar `pm2 describe yanbal-assistant | grep -E "interpreter|node.js version"`.

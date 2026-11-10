@@ -45,7 +45,9 @@ echo "  Respaldo: $DEST ($(find "$DEST" -type f | wc -l) archivos, huellas en $D
 paso "4/8" "Instalando el código nuevo (sobrescribe archivos de código; no borra nada ni toca datos)"
 mkdir -p "$APP/src" "$APP/public" "$APP/scripts" "$APP/test"
 cp -p "$PAQUETE"/src/*.js "$APP/src/"
-for f in index.html app.js styles.css usuarios.js; do [ -f "$PAQUETE/public/$f" ] && cp -p "$PAQUETE/public/$f" "$APP/public/"; done
+# Todos los archivos de public/ del paquete (no una lista fija: así un archivo nuevo como gestor.js no se queda sin instalar).
+# No se tocan los que solo existen en producción (p. ej. el logotipo).
+for f in "$PAQUETE"/public/*; do [ -f "$f" ] && cp -p "$f" "$APP/public/"; done
 cp -p "$PAQUETE"/scripts/*.js "$APP/scripts/"
 cp -p "$PAQUETE"/test/*.js "$APP/test/"
 cp -p "$PAQUETE/package.json" "$PAQUETE/.gitignore" "$APP/"
@@ -63,7 +65,8 @@ if ! echo "$SALUD" | grep -q '"ai":"connected"' || ! echo "$SALUD" | grep -q "\"
   echo "Para volver a la versión anterior pide el script revertir-actualizacion.sh; el respaldo está en $DEST."
   exit 1
 fi
-for r in /app.js /usuarios.js; do
+# Cada archivo .js e .html del paquete debe servirse: si falta alguno (como pasó con gestor.js el 4 nov), se detiene aquí.
+for r in /app.js /usuarios.js $(cd "$PAQUETE/public" && ls *.js | grep -vx -e app.js -e usuarios.js | sed 's|^|/|'); do
   CODIGO="$(curl -s -m 8 -o /dev/null -w '%{http_code}' "http://127.0.0.1:$PUERTO$r" || true)"
   [ "$CODIGO" = "200" ] || { echo "  $r respondió $CODIGO"; echo "FALLÓ LA VERIFICACIÓN del contenido estático."; exit 1; }
 done

@@ -59,6 +59,7 @@ OUT="$(run_act)"; COD=$?
 echo "$OUT" | sed 's/^/    | /' | tail -32
 chk "actualización completada con código 0" "[ $COD -eq 0 ] && echo \"\$OUT\" | grep -q 'ACTUALIZACIÓN COMPLETADA'"
 chk "ahora sí se sirve la pantalla de usuarios y /api/sesion informa admin" "[ \$(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:$PUERTO/usuarios.js) = 200 ] && curl -s http://127.0.0.1:$PUERTO/api/sesion | grep -q '\"admin\":false'"
+chk "el código nuevo INCLUYE y SIRVE public/gestor.js (el paquete trae un archivo de public que la v2 anterior no tenía)" "[ -f '$APP/public/gestor.js' ] && [ \$(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:$PUERTO/gestor.js) = 200 ] && cmp -s '$APP/public/gestor.js' '$NUEVO/public/gestor.js'"
 chk "el usuario existente sigue entrando con su clave" "[ \$(curl -s -o /dev/null -w '%{http_code}' -X POST -H 'Content-Type: application/json' -d '{\"usuario\":\"isa\",\"clave\":\"clave-de-prueba-123\"}' http://127.0.0.1:$PUERTO/api/login) = 200 ]"
 chk "el respaldo de la versión anterior es idéntico a la instantánea original" "diff -r '$SB/opt-original/yanbal-assistant' \"\$(cat '$SB/respaldos/ULTIMO_RESPALDO_V2')\" >/dev/null"
 chk ".env, catálogo y campaña no cambiaron (ni su contenido ni sus permisos)" "cmp -s '$APP/.env' '$SB/opt-original/yanbal-assistant/.env' && cmp -s '$APP/data/catalogo_lectura.json' '$SB/opt-original/yanbal-assistant/data/catalogo_lectura.json' && cmp -s '$APP/data/campana.json' '$SB/opt-original/yanbal-assistant/data/campana.json' && [ \$(stat -c %a '$APP/.env') = 600 ]"

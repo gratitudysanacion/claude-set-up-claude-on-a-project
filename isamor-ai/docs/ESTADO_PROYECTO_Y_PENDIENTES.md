@@ -594,3 +594,15 @@ Siguiente: revisión legal del consentimiento (bloquea la Fase B), consultas del
 | Reinicio | `pm2 restart yanbal-assistant` el mismo día; salud con 451 productos, Node 22.22.0, Gestor activo |
 | Permisos | `campana.json` y `catalogo_lectura.json` quedaron en 600 (antes `campana.json` estaba en 644) |
 | Siguiente campaña | Procedimiento de `GUIA_CARGA_CAMPANA.md` (programar con fecha de inicio, reiniciar para cargar, promover después) |
+
+## 20. Entrega 18 en producción (10 de noviembre de 2026)
+
+| Tema | Estado |
+|---|---|
+| Contenido | Búsqueda por **tipo de oferta** («un 2 x 1», obsequios, compras especiales: con el total y el conteo por categoría; con el C12 real, 22, 11 y 3); sin «no hay» falso; sin «precio normal: no tengo ese dato» en compras especiales (verificadores en código) |
+| Instalación | `actualizar.sh` el 10 nov (respaldo `asistente-v2-antes-20261110-020152`), con cierre manual (`pm2 save` y comprobaciones). `server.js` sin cambio (`21f6d973…`). Producción en Node 22, 451 productos |
+| Hallazgo 1 | `actualizar.sh` copiaba `public/` por una **lista fija** sin `gestor.js`: las pantallas del Gestor **no llegaron a producción el 4 nov**. Corregido (copia todo `public/` y verifica que cada `.js` se sirva); instalado el 10 nov |
+| Hallazgo 2 | `actualizar.sh` esperaba **437 productos fijos** (C11) y dio un **falso fallo** con el C12 (451). Corregido: lee el número del catálogo de producción antes de actualizar. El ensayo enmascaraba el defecto (siempre pasaba el número explícito) y ya no lo hace |
+| Hallazgo 3 | Un paquete **completo** extraído sobre pruebas pisó la versión 17c (16 pruebas fallaron). Repuesto con `entrega17c.tar.gz` + delta de 5 archivos; ahora las entregas de pruebas listan su contenido antes de extraer y, si cambia un archivo sobre una versión instalada, se entrega solo el **delta** |
+| Hallazgo 4 | Pegar un `.txt` de instrucciones **con texto** en la terminal ejecutó líneas como comandos (las `->` del texto son redirecciones). Desde ahora, cada procedimiento tiene un archivo **solo de comandos y comentarios `#`** (`*_pegar.txt`) y otro de lectura |
+| Pendiente | Comprobar en el navegador «Un 2 x 1» y «precio del 60099» con sesión nueva; archivos vacíos accidentales en `/root` (`find /root -maxdepth 1 -type f -size 0`); restos de la v1 en producción (`src/routes`, `src/services`, copias `.backup-2026…`, `yanbal-logo.jpg`) inofensivos |

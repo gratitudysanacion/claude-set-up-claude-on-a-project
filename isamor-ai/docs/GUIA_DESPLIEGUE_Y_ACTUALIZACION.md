@@ -115,3 +115,14 @@ Todas se instalan con el `entregaN_pegar.txt` (verifica huella, copia `v3-antes-
 **Producción:** aún no tiene las Entregas 17 a 17c. Para llevarlas: paquete nuevo con la huella actual de `server.js` de producción como `HASH_ACTUAL`; respaldo de `gestor.db` antes del reinicio; la migración ocurre al arrancar; PM2 conserva Node 22 con `pm2 restart`.
 
 **Variables nuevas (opcionales):** `TOPE_MENSUAL_USD` (10), `PRECIO_ENTRADA_USD_MTOK` (0,10), `PRECIO_SALIDA_USD_MTOK` (0,50), `LIMITE_REDACCION_DIA` (30), `GASTO` (ruta de `gasto.json`).
+
+## 12. Lecciones de la actualización del 10 nov 2026 (Entrega 18)
+
+| Lección | Qué hacer |
+|---|---|
+| Listas fijas en los scripts se desactualizan | `actualizar.sh` ya no tiene lista de archivos de `public/` ni un número fijo de productos; lee los datos de producción. Revisar el resto de scripts por valores fijos |
+| El ensayo debe usar los valores por defecto | `prueba-actualizacion.sh` solo fija `ESPERADOS` en el caso negativo |
+| Un paquete completo sobre una versión instalada la pisa | En pruebas, entregar **solo el delta** y listar su contenido antes de extraer; comprobar con `diff -rq` antes de actualizar producción |
+| Los restos de la v1 en producción dan diferencias | `src/routes`, `src/services`, `*.backup-2026…` y `public/yanbal-logo.jpg` son inofensivos; el control los ignora (`Only in /opt/yanbal-assistant`) |
+| Pegado seguro | Archivos `*_pegar.txt` con solo comandos y comentarios `#`; los de explicación son aparte |
+| Cierre manual si `actualizar.sh` falla al verificar | `entrega18p_cierre_pegar.txt`: comparar cada archivo con el paquete, comparar datos con el respaldo, `/app.js` `/usuarios.js` `/gestor.js`, `pm2 save` |

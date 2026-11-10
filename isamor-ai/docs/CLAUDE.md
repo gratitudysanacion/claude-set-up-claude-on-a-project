@@ -92,7 +92,7 @@ Cuatro módulos, en este orden en el menú lateral: 1 Asistente comercial, 2 Ase
 
 **Fechas:** viernes 6 nov termina la campaña C11 · **sábado 7 nov 00:00 (Colombia) entra solo el C12** (hasta el 4 dic).
 
-**Producción (C12 promovido el 10 nov; sin otros cambios desde la mañana del 4 nov):** v2 con Comercial, Contenido y administración de usuarios; regla de compra especial; **C12 programado y confirmado en el registro**; asistente en **Node 22** (PM2 id 3); Gestor técnicamente activo pero **sin usuarias asignadas** (`manager` quitado a `admin`); respaldo diario verificado, exclusión de `gestor.db*` en el `tar` y cron `10 8 * * *` del respaldo del Gestor; `GESTOR_LLAVE` propia (rotada). **Producción NO tiene aún** las Entregas 17, 17b y 17c.
+**Producción (C12 promovido y Entrega 18 instalada el 10 nov; `public/gestor.js` ya está en producción):** v2 con Comercial, Contenido y administración de usuarios; regla de compra especial; **C12 programado y confirmado en el registro**; asistente en **Node 22** (PM2 id 3); Gestor técnicamente activo pero **sin usuarias asignadas** (`manager` quitado a `admin`); respaldo diario verificado, exclusión de `gestor.db*` en el `tar` y cron `10 8 * * *` del respaldo del Gestor; `GESTOR_LLAVE` propia (rotada). **Producción NO tiene aún** las Entregas 17, 17b y 17c.
 
 **Pruebas (servidor de pruebas, con el C12 simulado vigente):** Entregas 15 a 17c instaladas: pantallas del Gestor, respaldo/restauración, **redacción asistida de mensajes** (seguimiento, recordatorio y respuesta; estilos Cercano, Formal, Breve y Entusiasta; **«Mi estilo»** cifrado), verificación de largo, emojis, datos personales, importes y **promesas no escritas por la asesora**, **tope mensual de 10 USD** de gasto de IA, esquema de `gestor.db` **versión 2** (migrado el 4 nov con respaldo previo). 300 pruebas automáticas, 22+ de navegador. Costo real medido: ~0,0003 USD por borrador.
 
@@ -119,3 +119,7 @@ Un artículo cuya promoción empieza por "Compra especial", con precio de oferta
 - Una prueba que falla una vez no se descarta: se repite varias veces tras corregirla.
 - Un secreto que el terminal imprime una sola vez (la llave del Gestor) **no se pega en el chat**: se corre ese comando aparte y solo se pega la verificación de nombres y permisos. El 4 nov se pegó por error; se rotó sin pérdida porque aún no había datos cifrados.
 - Si una comprobación previa dice «deténgase» (p. ej. quitar el módulo `manager` a `admin` antes de activar el Gestor), no se continúa hasta que salga limpia.
+- Los `.txt` que se pegan en la terminal llevan **solo comandos y comentarios `#`**; las explicaciones van en otro archivo. Un `.txt` con texto ejecutó líneas como comandos el 10 nov (las `->` son redirecciones).
+- Un paquete de código completo sobre una versión ya instalada la pisa: entregar solo el **delta** (con su contenido listado) y comprobar con `diff -rq` antes de tocar producción.
+- Los scripts de despliegue no deben tener números ni listas de archivos fijos: el 437 de `actualizar.sh` y la lista de `public/` fallaron el 10 nov.
+

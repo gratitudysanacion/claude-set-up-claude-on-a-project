@@ -240,7 +240,7 @@ test('xlsx -> consolidado -> cargar-campana (ensayo): la cadena completa funcion
 
     const datos = path.join(dir, 'data');
     fs.mkdirSync(datos);
-    const carga = correr('cargar-campana.js', ['--origen', destino, '--campana', 'C12 2026', '--desde', '2026-11-07', '--hasta', '2026-12-04', '--esperados', '5'], { DATA_DIR: datos });
+    const carga = correr('cargar-campana.js', ['--origen', destino, '--campana', 'C12 2026', '--desde', '2026-11-07', '--hasta', '2026-12-04', '--esperados', '5'], { DATA_DIR: datos, HOY: '2026-10-30' });   // fecha fija: la prueba no depende del día en que se corra
     assert.equal(carga.status, 0, carga.stdout + carga.stderr);
     assert.match(carga.stdout, /Productos en el origen: 5/);
     assert.deepEqual(fs.readdirSync(datos), []); // ensayo: no escribe nada

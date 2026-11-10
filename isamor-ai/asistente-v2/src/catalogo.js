@@ -9,6 +9,31 @@ const PALABRAS_VACIAS = new Set([
   'cuanto', 'cuesta', 'vale', 'precio', 'tiene', 'tienen', 'me', 'quiero', 'saber'
 ]);
 
+// Búsqueda por TIPO de oferta ("un 2 x 1", "obsequios", "compras especiales"): el texto de la promoción no está en el índice por
+// nombre, así que estas consultas se resuelven con las banderas que calcula el código (tipo_promocion), no con palabras.
+const PALABRAS_DE_LISTA = new Set([
+  'que', 'cuales', 'cual', 'hay', 'productos', 'producto', 'promocion', 'promociones', 'oferta', 'ofertas', 'estan', 'esta', 'todos', 'todas',
+  'lista', 'dame', 'muestra', 'muestrame', 'tienen', 'tiene', 'algun', 'alguna', 'algunos', 'algunas', 'son', 'ver', 'busca', 'buscar',
+  'necesito', 'a', 'al', 'unos', 'unas', 'como', 'cuantos', 'cuantas', 'existen', 'tenemos', 'catalogo'
+]);
+const TIPOS_DE_OFERTA = [
+  { id: '2x1', re: /\b2 ?x ?1\b|\bdos por uno\b/, solo: false },
+  { id: 'obsequio', re: /\bobsequios?\b/, solo: false },
+  { id: 'compra_especial', re: /\bcompras? especial(?:es)?\b/, solo: false },
+  { id: 'obsequio', re: /\bregalos?\b/, solo: true }   // "regalo" también está en nombres de productos: solo si la consulta no dice nada más
+];
+
+// -> { tipo, resto: [términos que no son del tipo ni de relleno] } o null
+function detectarTipoDeOferta(q, vacias) {
+  for (const t of TIPOS_DE_OFERTA) {
+    if (!t.re.test(q)) continue;
+    const resto = q.replace(t.re, ' ').split(' ').filter(x => x && !vacias.has(x) && !PALABRAS_DE_LISTA.has(x));
+    if (t.solo && resto.length) continue;
+    return { tipo: t.id, resto };
+  }
+  return null;
+}
+
 function normalizar(texto) {
   return String(texto || '')
     .normalize('NFD').replace(/[̀-ͯ]/g, '')
@@ -61,6 +86,27 @@ function crearCatalogo({ productos, campana = null, hoy = () => fechaColombia() 
     const tope = Math.min(Math.max(1, Number.parseInt(limite, 10) || LIMITE_MAXIMO), LIMITE_MAXIMO);
     const cat = categoria ? normalizar(categoria) : null;
     let candidatos = indice.filter(i => !cat || normalizar(i.producto.categoria).includes(cat));
+
+    // Consulta por tipo de oferta: se responde con los productos de ese tipo y su total (y cuántos hay por categoría).
+    const porTipo = detectarTipoDeOferta(q, PALABRAS_VACIAS);
+    if (porTipo) {
+      const todos = candidatos.map(i => ({ i, p: prepararProducto(i.producto, campana, ctx.fecha) })).filter(x => x.p.tipo_promocion === porTipo.tipo);
+      const lista = porTipo.resto.length ? todos.filter(x => porTipo.resto.every(t => x.i.texto.includes(t))) : todos;
+      if (lista.length || !porTipo.resto.length) {
+        lista.sort((a, b) => normalizar(a.p.categoria).localeCompare(normalizar(b.p.categoria), 'es') || a.i.nombre.localeCompare(b.i.nombre, 'es'));
+        const devueltos = lista.slice(0, tope).map(x => x.p);
+        const porCategoria = {};
+        for (const x of lista) porCategoria[x.p.categoria || 'Sin categoría'] = (porCategoria[x.p.categoria || 'Sin categoría'] || 0) + 1;
+        return {
+          consulta, tipo_oferta: porTipo.tipo, total_coincidencias: lista.length, devueltos: devueltos.length,
+          truncado: lista.length > devueltos.length, ambiguo: devueltos.length > 1, por_categoria: porCategoria,
+          nota: lista.length ? 'Búsqueda por tipo de oferta: di cuántos hay en total y, si hay más de los devueltos, pide acotar por categoría.'
+            : 'La campaña cargada no tiene productos de este tipo de oferta.',
+          ...ctx, productos: devueltos
+        };
+      }
+      // Con términos adicionales que no coinciden (p. ej. "2x1 de un producto que no existe") se sigue con la búsqueda normal.
+    }
 
     // Referencia exacta: es única entre las no vacías.
     const porReferencia = candidatos.filter(i => i.referencia && i.referencia === q);

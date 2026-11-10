@@ -49,17 +49,37 @@ function comprasEspecialesCitadas(texto, resultados) {
   return citadas;
 }
 
-// -> { ok, faltan: [] } ; faltan puede contener 'solo_aplica_con_compra' y 'no_se_vende_suelto'
+// Una compra especial no tiene precio normal: decir «precio normal: no tengo ese dato» confunde (parece un dato que falta).
+const RE_SIN_NORMAL = /precio\s+normal\s*:?[^.\n]{0,25}no\s+tengo|no\s+tengo\s+(?:el\s+|ese\s+)?(?:dato\s+del\s+)?precio\s+normal/;
+
+// -> { ok, faltan: [] } ; faltan puede contener 'solo_aplica_con_compra', 'no_se_vende_suelto' y 'sin_precio_normal_espurio'
 function verificarCompraEspecial(texto, resultados) {
   if (!comprasEspecialesCitadas(texto, resultados).length) return { ok: true, faltan: [] };
   const t = sinTildes(texto);
   const faltan = [];
   if (!RE_SOLO_APLICA.test(t)) faltan.push('solo_aplica_con_compra');
   if (!RE_NO_SUELTO.test(t)) faltan.push('no_se_vende_suelto');
+  // Solo se rechaza si ningún otro producto del resultado carece de precio normal (en ese caso la frase podría ser cierta).
+  const otroSinNormal = (resultados || []).some(r => (r.productos || []).some(p => p.precio_normal == null && p.tipo_promocion !== 'compra_especial'));
+  if (!otroSinNormal && RE_SIN_NORMAL.test(t)) faltan.push('sin_precio_normal_espurio');
   return { ok: faltan.length === 0, faltan };
 }
 
-const CORRECCION_COMPRA_ESPECIAL = 'Cuando menciones el precio de un producto con tipo_promocion "compra_especial" debes aclarar, en ese mismo texto, '
-  + 'que ese precio solo aplica con la compra de un producto (el que indica la promoción) y que no se vende suelto.';
+// Afirmar que NO hay productos de un tipo de oferta (2 x 1, obsequio, compra especial) cuando el resultado sí los trae.
+const AUSENCIAS = [
+  { tipo: '2x1', re: /\bno\s+(?:encontr\w+|hay|tengo|existen?|tenemos|aparecen|figuran)\b[^.\n]{0,80}?(?:\b2\s*x\s*1\b|dos\s+por\s+uno)/ },
+  { tipo: 'obsequio', re: /\bno\s+(?:encontr\w+|hay|tengo|existen?|tenemos|aparecen|figuran)\b[^.\n]{0,80}?(?:obsequios?|regalos?)/ },
+  { tipo: 'compra_especial', re: /\bno\s+(?:encontr\w+|hay|tengo|existen?|tenemos|aparecen|figuran)\b[^.\n]{0,80}?compras?\s+especial/ }
+];
+function verificarAusenciaFalsa(texto, resultados) {
+  const t = sinTildes(texto);
+  const falsos = AUSENCIAS.filter(a => a.re.test(t)
+    && (resultados || []).some(r => (r.productos || []).some(p => p.tipo_promocion === a.tipo))).map(a => a.tipo);
+  return { ok: falsos.length === 0, tipos: falsos };
+}
 
-module.exports = { verificarCompraEspecial, comprasEspecialesCitadas, CORRECCION_COMPRA_ESPECIAL, verificarRespuesta, importesPermitidos, importesEnTexto };
+const CORRECCION_COMPRA_ESPECIAL = 'Cuando menciones el precio de un producto con tipo_promocion "compra_especial" debes aclarar, en ese mismo texto, '
+  + 'que ese precio solo aplica con la compra de un producto (el que indica la promoción) y que no se vende suelto. '
+  + 'No escribas «precio normal: no tengo ese dato» para estos productos: no tienen precio normal, no es un dato que falte.';
+
+module.exports = { verificarAusenciaFalsa, verificarCompraEspecial, comprasEspecialesCitadas, CORRECCION_COMPRA_ESPECIAL, verificarRespuesta, importesPermitidos, importesEnTexto };

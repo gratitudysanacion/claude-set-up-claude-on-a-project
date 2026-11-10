@@ -126,3 +126,14 @@ Todas se instalan con el `entregaN_pegar.txt` (verifica huella, copia `v3-antes-
 | Los restos de la v1 en producción dan diferencias | `src/routes`, `src/services`, `*.backup-2026…` y `public/yanbal-logo.jpg` son inofensivos; el control los ignora (`Only in /opt/yanbal-assistant`) |
 | Pegado seguro | Archivos `*_pegar.txt` con solo comandos y comentarios `#`; los de explicación son aparte |
 | Cierre manual si `actualizar.sh` falla al verificar | `entrega18p_cierre_pegar.txt`: comparar cada archivo con el paquete, comparar datos con el respaldo, `/app.js` `/usuarios.js` `/gestor.js`, `pm2 save` |
+
+## 13. Revisión de valores fijos en scripts (10 nov 2026)
+
+| Hallazgo | Riesgo | Corrección |
+|---|---|---|
+| `actualizar.sh`: huella de server.js fija en el script | Hay que editarlo a mano en cada versión; error humano | Prioridad: variable `HASH_ACTUAL` > archivo `$APP/.hash-instalado` (lo escribe el script al terminar bien) > valor de arranque |
+| `actualizar.sh`: pruebas con el Node 18 del sistema | Se omiten ~36–52 pruebas de SQLite antes de instalar | Usa el intérprete de PM2 (o `NODE_BIN`) y muestra cuál usó |
+| `desplegar.sh` / `revertir.sh` (v1→v2) | 437 productos, huellas v1 y lista fija de public/ | Marcados HISTÓRICO; no corren sin `FORZAR_HISTORICO=si` |
+| Pruebas dependientes de fecha | Falla repentina como el 4 nov | Suite completa con reloj +240 días: 310/310 |
+| Cron de respaldo con `/opt/node22/bin/node` fijo | Si cambia el Node, el respaldo falla sin aviso | PENDIENTE: revisar la antigüedad del último respaldo |
+| `prueba-actualizacion.sh`: `NUEVO` por defecto apunta a un paquete viejo | Ensayo engañoso | Ejecutar siempre `NUEVO=<ruta del paquete>` |

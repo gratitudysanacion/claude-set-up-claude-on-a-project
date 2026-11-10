@@ -13,7 +13,13 @@ RESPALDOS="${RESPALDOS:-/root/respaldos-manuales}"
 PM2_NOMBRE="${PM2_NOMBRE:-yanbal-assistant}"
 PUERTO="${PUERTO:-3080}"
 ESPERADOS="${ESPERADOS:-}"                      # si no se indica, se lee del catálogo de producción antes de actualizar (no hay un número fijo)
-HASH_ACTUAL="${HASH_ACTUAL:-21f6d9734dd8635c}"   # server.js en producción tras el 2 nov 2026 (Entrega 13). Cámbialo al instalar una versión nueva.
+# Huella de server.js que debe tener producción. Prioridad: variable HASH_ACTUAL > archivo $APP/.hash-instalado
+# (lo escribe este script al terminar bien) > valor de arranque (Entrega 13). Así no hay que editar el script a mano.
+HASH_ARCHIVO="${HASH_ARCHIVO:-$APP/.hash-instalado}"
+HASH_ARRANQUE="21f6d9734dd8635c"
+if [ -n "${HASH_ACTUAL:-}" ]; then ORIGEN_HASH="variable HASH_ACTUAL"
+elif [ -s "$HASH_ARCHIVO" ]; then HASH_ACTUAL="$(tr -d '[:space:]' < "$HASH_ARCHIVO")"; ORIGEN_HASH="$HASH_ARCHIVO"
+else HASH_ACTUAL="$HASH_ARRANQUE"; ORIGEN_HASH="valor de arranque"; fi
 RESTART_CMD="${RESTART_CMD:-}"                    # solo para pruebas; en producción se usa PM2
 FECHA="$(date +%Y%m%d-%H%M%S)"
 
@@ -23,7 +29,7 @@ abortar() { echo; echo "ABORTADO: $1"; echo "El código de producción no se mod
 paso "1/8" "Verificando que producción tiene la versión esperada"
 [ -d "$APP" ] || abortar "no existe $APP"
 H="$(sha256sum "$APP/src/server.js" | cut -c1-16)"
-[ "$H" = "$HASH_ACTUAL" ] || abortar "src/server.js ($H) no coincide con la versión esperada ($HASH_ACTUAL). Alguien la cambió o ya se actualizó."
+[ "$H" = "$HASH_ACTUAL" ] || abortar "src/server.js ($H) no coincide con la versión esperada ($HASH_ACTUAL, según $ORIGEN_HASH). Alguien la cambió o ya se actualizó."
 for f in .env data/usuarios.json data/catalogo_lectura.json data/campana.json; do [ -f "$APP/$f" ] || abortar "falta $f en producción."; done
 # Productos que debe informar /health tras reiniciar: los del catálogo que producción tiene AHORA (la actualización no cambia datos).
 # Un número fijo se quedó viejo al pasar del C11 (437) al C12 (451) y dio un falso fallo el 10 nov 2026.
@@ -35,10 +41,16 @@ echo "  productos esperados tras reiniciar: $ESPERADOS (leídos del catálogo de
 echo "  versión esperada confirmada; datos presentes."
 
 paso "2/8" "Pruebas automáticas del paquete (antes de tocar producción)"
-RESULTADO="$(cd "$PAQUETE" && npm test 2>&1 | grep -E '^# (tests|pass|fail)' | tr '\n' ' ')"
+# Las pruebas se corren con el MISMO Node que usa producción (PM2): con el Node 18 del sistema se omiten las pruebas de SQLite.
+if [ -z "${NODE_BIN:-}" ] && [ -z "$RESTART_CMD" ]; then
+  NODE_BIN="$(pm2 describe "$PM2_NOMBRE" 2>/dev/null | sed -n 's/.*interpreter path *│ *\([^ ]*\).*/\1/p' | head -1 || true)"
+fi
+[ -n "${NODE_BIN:-}" ] && [ -x "$NODE_BIN" ] || NODE_BIN="$(command -v node)"
+echo "  Node de las pruebas: $NODE_BIN ($("$NODE_BIN" -v))"
+RESULTADO="$(cd "$PAQUETE" && "$NODE_BIN" --test test/*.test.js 2>&1 | grep -E '^# (tests|pass|fail)' | tr '\n' ' ')"
 echo "  $RESULTADO"
 echo "$RESULTADO" | grep -q '# fail 0' || abortar "hay pruebas fallidas."
-for f in "$PAQUETE"/src/*.js "$PAQUETE"/scripts/*.js "$PAQUETE"/public/*.js; do node --check "$f" || abortar "error de sintaxis en $f"; done
+for f in "$PAQUETE"/src/*.js "$PAQUETE"/scripts/*.js "$PAQUETE"/public/*.js; do "$NODE_BIN" --check "$f" || abortar "error de sintaxis en $f"; done
 
 paso "3/8" "Copia de respaldo completa de la versión actual"
 mkdir -p "$RESPALDOS"
@@ -88,6 +100,8 @@ for f in .env data/usuarios.json data/catalogo_lectura.json data/campana.json; d
 done
 echo "  comprobación terminada."
 
+H_NUEVO="$(sha256sum "$APP/src/server.js" | cut -c1-16)"
+[ -z "$RESTART_CMD" ] && echo "$H_NUEVO" > "$HASH_ARCHIVO" || true   # la próxima actualización exigirá esta huella
 echo; echo "ACTUALIZACIÓN COMPLETADA."
 echo "  Versión instalada: server.js $(sha256sum "$APP/src/server.js" | cut -c1-16)"
 echo "  Respaldo de la versión anterior: $DEST"

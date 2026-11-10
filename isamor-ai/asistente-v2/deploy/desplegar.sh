@@ -1,4 +1,8 @@
 #!/usr/bin/env bash
+# ==== HISTÓRICO — NO REUTILIZAR ====
+# Migración v1→v2 de oct 2026. Tiene valores fijos que ya no son ciertos (437 productos, huellas de la v1, lista fija de public/).
+# Para actualizar producción use deploy/actualizar.sh; para revertir, deploy/revertir-actualizacion.sh.
+[ "${FORZAR_HISTORICO:-}" = "si" ] || { echo "Script histórico: use deploy/actualizar.sh"; exit 2; }
 # Despliegue del Asistente comercial v2 sobre el asistente actual (v1).
 # - No borra nada: solo copia y sobrescribe archivos de código. La versión anterior queda respaldada.
 # - Ejecuta las pruebas ANTES de tocar producción y verifica la salud DESPUÉS de reiniciar.

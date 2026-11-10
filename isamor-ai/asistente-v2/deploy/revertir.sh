@@ -1,4 +1,8 @@
 #!/usr/bin/env bash
+# ==== HISTÓRICO — NO REUTILIZAR ====
+# Migración v1→v2 de oct 2026. Tiene valores fijos que ya no son ciertos (437 productos, huellas de la v1, lista fija de public/).
+# Para actualizar producción use deploy/actualizar.sh; para revertir, deploy/revertir-actualizacion.sh.
+[ "${FORZAR_HISTORICO:-}" = "si" ] || { echo "Script histórico: use deploy/actualizar.sh"; exit 2; }
 # Reversión: vuelve a la versión anterior (v1) respaldada por desplegar.sh.
 # No borra nada: la versión fallida se MUEVE a una carpeta aparte para poder analizarla.
 set -euo pipefail

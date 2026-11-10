@@ -12,7 +12,7 @@ PAQUETE="$(cd "$(dirname "$0")/.." && pwd)"
 RESPALDOS="${RESPALDOS:-/root/respaldos-manuales}"
 PM2_NOMBRE="${PM2_NOMBRE:-yanbal-assistant}"
 PUERTO="${PUERTO:-3080}"
-ESPERADOS="${ESPERADOS:-437}"
+ESPERADOS="${ESPERADOS:-}"                      # si no se indica, se lee del catálogo de producción antes de actualizar (no hay un número fijo)
 HASH_ACTUAL="${HASH_ACTUAL:-21f6d9734dd8635c}"   # server.js en producción tras el 2 nov 2026 (Entrega 13). Cámbialo al instalar una versión nueva.
 RESTART_CMD="${RESTART_CMD:-}"                    # solo para pruebas; en producción se usa PM2
 FECHA="$(date +%Y%m%d-%H%M%S)"
@@ -25,6 +25,13 @@ paso "1/8" "Verificando que producción tiene la versión esperada"
 H="$(sha256sum "$APP/src/server.js" | cut -c1-16)"
 [ "$H" = "$HASH_ACTUAL" ] || abortar "src/server.js ($H) no coincide con la versión esperada ($HASH_ACTUAL). Alguien la cambió o ya se actualizó."
 for f in .env data/usuarios.json data/catalogo_lectura.json data/campana.json; do [ -f "$APP/$f" ] || abortar "falta $f en producción."; done
+# Productos que debe informar /health tras reiniciar: los del catálogo que producción tiene AHORA (la actualización no cambia datos).
+# Un número fijo se quedó viejo al pasar del C11 (437) al C12 (451) y dio un falso fallo el 10 nov 2026.
+if [ -z "$ESPERADOS" ]; then
+  ESPERADOS="$(node -e 'const d=JSON.parse(require("fs").readFileSync(process.argv[1],"utf8"));const a=Array.isArray(d)?d:d.productos;console.log(Array.isArray(a)?a.length:"")' "$APP/data/catalogo_lectura.json" 2>/dev/null || true)"
+  [[ "$ESPERADOS" =~ ^[0-9]+$ ]] && [ "$ESPERADOS" -gt 0 ] || abortar "no pude leer cuántos productos tiene el catálogo de producción."
+fi
+echo "  productos esperados tras reiniciar: $ESPERADOS (leídos del catálogo de producción)"
 echo "  versión esperada confirmada; datos presentes."
 
 paso "2/8" "Pruebas automáticas del paquete (antes de tocar producción)"

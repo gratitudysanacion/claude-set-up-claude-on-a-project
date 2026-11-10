@@ -37,7 +37,8 @@ eval "$RESTART"; sleep 1.5
 chk "la réplica de ayer responde con la IA conectada" "curl -s -m 5 http://127.0.0.1:$PUERTO/health | grep -q '\"ai\":\"connected\"'"
 chk "la réplica de ayer NO tiene la pantalla de usuarios" "[ \$(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:$PUERTO/usuarios.js) = 404 ]"
 
-run_act() { env APP="$APP" RESPALDOS="$SB/respaldos" PUERTO="$PUERTO" ESPERADOS="${2:-$N}" HASH_ACTUAL="${1:-$HASH}" RESTART_CMD="$RESTART" bash "$NUEVO/deploy/actualizar.sh" 2>&1; }
+# ESPERADOS solo se fija cuando una prueba lo pide (caso negativo): si no, el script debe leerlo del catálogo de producción por sí mismo.
+run_act() { env APP="$APP" RESPALDOS="$SB/respaldos" PUERTO="$PUERTO" ${2:+ESPERADOS="$2"} HASH_ACTUAL="${1:-$HASH}" RESTART_CMD="$RESTART" bash "$NUEVO/deploy/actualizar.sh" 2>&1; }
 run_rev() { env APP="$APP" RESPALDOS="$SB/respaldos" PUERTO="$PUERTO" RESTART_CMD="$RESTART" STOP_CMD="$STOP" bash "$NUEVO/deploy/revertir-actualizacion.sh" 2>&1; }
 
 # --- negativos ---

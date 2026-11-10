@@ -584,3 +584,13 @@ Siguiente: revisión legal del consentimiento (bloquea la Fase B), consultas del
 | Esquema de la base | Versión 2 (tabla `estilos`), migrada en pruebas el 4 nov con respaldo previo y 1 clienta conservada |
 | Hallazgos de la sesión | El nombre de la clienta podía abrir etiquetas en el mensaje al modelo (corregido); el «null» en pantalla (15b); el tamaño de las pestañas (16 px frente a 12-13 px); un borrador con «regalo» y «consentirte» llevó a verificar promesas por código; un choque de nombres en la restauración dentro del mismo segundo (16b) |
 | Pendientes | Probar «Mi estilo» con mensajes reales de la usuaria; subir el límite de la organización en la consola; revisión legal; Fase B; llevar 17 a 17c a producción con respaldo previo |
+
+## 19. C12 promovido a campaña actual (10 de noviembre de 2026)
+
+| Tema | Estado |
+|---|---|
+| Vigencia | El C12 entró solo el 7 de noviembre a las 00:00 (confirmado por la usuaria: «ya está funcionando») |
+| Promoción | `cargar-campana.js --promover --aplicar` el 10 nov (hora de Colombia: noche del 9): el C11 quedó respaldado en `data/campanas-anteriores/20261110001642-2026-11-09`; `campana.json` y `catalogo_lectura.json` son ahora del C12 (451 productos) y ya no hay archivos `*_siguiente.json` |
+| Reinicio | `pm2 restart yanbal-assistant` el mismo día; salud con 451 productos, Node 22.22.0, Gestor activo |
+| Permisos | `campana.json` y `catalogo_lectura.json` quedaron en 600 (antes `campana.json` estaba en 644) |
+| Siguiente campaña | Procedimiento de `GUIA_CARGA_CAMPANA.md` (programar con fecha de inicio, reiniciar para cargar, promover después) |

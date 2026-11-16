@@ -607,3 +607,11 @@ Siguiente: revisión legal del consentimiento (bloquea la Fase B), consultas del
 | Hallazgo 4 | Pegar un `.txt` de instrucciones **con texto** en la terminal ejecutó líneas como comandos (las `->` del texto son redirecciones). Desde ahora, cada procedimiento tiene un archivo **solo de comandos y comentarios `#`** (`*_pegar.txt`) y otro de lectura |
 | Verificación en producción (10 nov, navegador, sesión nueva) | **Hecha por la usuaria**: «Un 2 x 1» (22 productos, 10 listados y conteo por categoría 18/2/1/1), «precio del 60099» (compra especial, «No tiene precio normal registrado») y «precio del 670» (C12, página 112): correctas |
 | Pendiente | Archivos vacíos accidentales en `/root` (`find /root -maxdepth 1 -type f -size 0`); restos de la v1 en producción (`src/routes`, `src/services`, copias `.backup-2026…`, `yanbal-logo.jpg`) inofensivos |
+
+## 21. Revisión y limpieza del servidor (16 nov 2026)
+
+- Respaldos verificados: sistema «OK» diario hasta el 16 nov; Gestor con copia diaria sin huecos (14 guardadas, tope de retención). Producción en línea, 451 productos, disco 8 %.
+- Borrado con autorización: 4 archivos vacíos de `/root` (restos de una pegada); `practica-restauracion`, `respaldos-gestor-prueba`, 20 carpetas `v3-antes-*`, `/root/actualizacion-18`, `/root/prueba-node22.log`.
+- Se conservan: `v3` (pruebas), `v3-antes-17c`, `v3-antes-18`, `/root/actualizacion-18p`, `/root/respaldos-manuales`.
+- Sin revisar (no borrar hasta ver su contenido): `entrega*.tar.gz`, `v2`, `v2e2`, `v2e2b`, `actualizacion-c12`, `actualizacion-gestor`, `actualizacion-usuarios`, `c12-entrada`, `produccion-v2`, `paquetes-despliegue`, `panel-staging`, `descargas-node`.
+- Hallazgos abiertos: (1) producción se reinició hacia el 13 nov sin causa conocida (PM2: 3 días, 0 reinicios; el proceso de pruebas no se reinició); (2) `/root/.ssh` cambió el 16 nov 19:42, probablemente por la terminal web del proveedor, sin confirmar; (3) el servidor pide reinicio y hay una actualización que no se instaló sola; (4) `.bash_history` de 155 KB sin revisar.

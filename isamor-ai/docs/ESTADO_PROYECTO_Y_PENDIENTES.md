@@ -626,3 +626,4 @@ Siguiente: revisión legal del consentimiento (bloquea la Fase B), consultas del
 - Pruebas (puerto 3082): arrancado a mano con arranque normal, SIN la campaña 12 simulada. No está en PM2: tras cada reinicio del servidor hay que levantarlo con `cd /root/asistente-v2-pruebas/v3 && PORT=3082 setsid nohup /opt/node22/bin/node src/server.js > /root/asistente-v2-pruebas/pruebas.log 2>&1 < /dev/null &`.
 - No actualizar a Ubuntu 26.04 por ahora.
 - Abierto: el puerto 3000 (aplicación `gratitud`) escucha en todas las interfaces; falta confirmar si hay cortafuegos. No se modifica ese sitio sin decisión de la propietaria.
+- Puerto 3000 (cerrado el 17 nov): el cortafuegos `ufw` está activo, niega toda entrada por defecto y solo permite 22, 80 y 443. El puerto 3000 de `gratitud` (`/opt/gratitud/app`) escucha en todas las interfaces pero no es accesible desde internet. Única capa de protección: `ufw`; no desactivarlo. No se cambió nada en ese sitio.

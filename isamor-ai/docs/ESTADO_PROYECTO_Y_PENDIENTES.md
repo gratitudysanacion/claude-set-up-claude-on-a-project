@@ -616,3 +616,13 @@ Siguiente: revisión legal del consentimiento (bloquea la Fase B), consultas del
 - Sin revisar (no borrar hasta ver su contenido): `entrega*.tar.gz`, `v2`, `v2e2`, `v2e2b`, `actualizacion-c12`, `actualizacion-gestor`, `actualizacion-usuarios`, `c12-entrada`, `produccion-v2`, `paquetes-despliegue`, `panel-staging`, `descargas-node`.
 - Hallazgos abiertos: (1) producción se reinició hacia el 13 nov sin causa conocida (PM2: 3 días, 0 reinicios; el proceso de pruebas no se reinició); (2) `/root/.ssh` cambió el 16 nov 19:42, probablemente por la terminal web del proveedor, sin confirmar; (3) el servidor pide reinicio y hay una actualización que no se instaló sola; (4) `.bash_history` de 155 KB sin revisar.
 - GitHub: la conexión de Claude está hecha con la cuenta `gratitudysanacion` (repositorio `gratitudysanacion/claude-set-up-claude-on-a-project`, rama `claude/gracious-ptolemy-qm2mvv`, sin PR). El 16 nov la subida falló con error 403 hasta reconectar la cuenta; si se repite, reconectar GitHub desde claude.ai y reintentar.
+
+## 22. Actualización y reinicio del servidor (17 nov 2026)
+
+- Hallazgos del 16 nov aclarados: el reinicio del asistente del 13 nov (06:14 UTC) lo causó la actualización automática de `libc6`, que reinició PM2 (volvió en 2 s); el cambio en `/root/.ssh` es la terminal web del proveedor, que pone y retira una llave temporal en `authorized_keys` en cada ingreso. Sin ingresos ajenos.
+- SSH: sin contraseñas, solo llave; el servidor lee `authorized_keys` y `authorized_keys_cris` (aquí está la llave personal). `ssh.service` figura «disabled» porque arranca por socket; es normal en Ubuntu 24.04.
+- Con autorización: respaldo en `/root/respaldos-manuales/antes-actualizacion-servidor-20261117-003930` (incluye `apt-upgrade.log`), 61 paquetes actualizados y reinicio. Ubuntu 24.04.5, núcleo 6.8.0-149 en uso, ya no pide reinicio, 0 servicios fallidos.
+- Tras reiniciar: PM2 levantó solo los tres sitios; asistente con 451 productos; los dos dominios responden 200; las 2 tareas de respaldo siguen en cron. Quedan 2 paquetes retenidos (`cloud-init` lo retiene el proveedor).
+- Pruebas (puerto 3082): arrancado a mano con arranque normal, SIN la campaña 12 simulada. No está en PM2: tras cada reinicio del servidor hay que levantarlo con `cd /root/asistente-v2-pruebas/v3 && PORT=3082 setsid nohup /opt/node22/bin/node src/server.js > /root/asistente-v2-pruebas/pruebas.log 2>&1 < /dev/null &`.
+- No actualizar a Ubuntu 26.04 por ahora.
+- Abierto: el puerto 3000 (aplicación `gratitud`) escucha en todas las interfaces; falta confirmar si hay cortafuegos. No se modifica ese sitio sin decisión de la propietaria.
